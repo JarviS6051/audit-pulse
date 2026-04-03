@@ -10,9 +10,6 @@ import {
 
 // ─── Import shared design system ─────────────────────────────────────────────
 const DESIGN_SYSTEM_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap');
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
   --ds-font:              'DM Sans', sans-serif;
   --ds-mono:              'DM Mono', monospace;
@@ -81,7 +78,6 @@ const DESIGN_SYSTEM_CSS = `
   --ds-id-color:          #374151;
 }
 
-body { font-family:var(--ds-font); background:var(--ds-bg); color:var(--ds-text-secondary); }
 .hide-sb::-webkit-scrollbar { display:none; }
 .hide-sb { -ms-overflow-style:none; scrollbar-width:none; }
 @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
@@ -320,20 +316,11 @@ export default function AuditDetailsPage() {
     if (!mounted) return null;
 
     // Fixed container: no overflow-x hidden, no isolation issues, solid background, lower z-index
-    return (
-        <>
-            <style>{DESIGN_SYSTEM_CSS}{`
-        /* No overflow-x hidden anywhere */
-        .ad-page, .ad-inner, .ad-main, .ad-two-col {
+    const auditDetailCss = `${DESIGN_SYSTEM_CSS}
+        .ad-shell, .ad-main, .ad-two-col {
           overflow-x: visible;
         }
-        .ad-page {
-          min-height: 100vh;
-          background: var(--ds-bg);
-          isolation: isolate;
-        }
-        @media(min-width:640px)  { .ad-inner { padding:32px 24px 80px !important; } }
-        @media(min-width:1024px) { .ad-inner { padding:40px 32px 80px !important; } }
+        .ad-shell { width: 100%; padding-bottom: 24px; }
 
         .ad-kpi-grid {
           display: grid;
@@ -401,53 +388,46 @@ export default function AuditDetailsPage() {
           gap: 20px;
         }
         @media(min-width:640px)  { .ad-scope-text-grid { grid-template-columns: 1fr 1fr; } }
-      `}</style>
+      `;
 
-            <div className="ad-page">
-                {/* ── HEADER (non‑sticky to avoid z‑index wars; use solid background) ── */}
-                <header style={{
-                    position: "relative",
-                    background: "var(--ds-bg)",
-                    borderBottom: "1px solid var(--ds-border)",
-                }}>
-                    <div style={{ maxWidth: 1480, margin: "0 auto", padding: "12px 16px" }}>
-                        {/* Breadcrumb */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                            <button
-                                onClick={() => window.history.back()}
-                                style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "var(--ds-text-muted)", fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-font)", padding: 0 }}
-                            >
-                                <ArrowLeft size={13} strokeWidth={2.5} />
-                                Back to Audits
-                            </button>
+    return (
+        <>
+            <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: auditDetailCss }} />
+
+            <section className="ad-shell">
+                {/* Header card now lives inside shared app shell */}
+                <Card style={{ marginBottom: 16 }}>
+                    <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--ds-border-subtle)" }}>
+                        <button
+                            onClick={() => window.history.back()}
+                            style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "var(--ds-text-muted)", fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-font)", padding: 0 }}
+                        >
+                            <ArrowLeft size={13} strokeWidth={2.5} />
+                            Back to Audits
+                        </button>
+                    </div>
+                    <div style={{ padding: "16px 20px", display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                                <span style={{ fontFamily: "var(--ds-mono)", fontSize: 11, color: "var(--ds-id-color)", background: "var(--ds-id-bg)", border: "1px solid var(--ds-id-border)", borderRadius: 6, padding: "2px 8px", letterSpacing: "0.04em" }}>
+                                    {AUDIT.id}
+                                </span>
+                                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--ds-text-muted)", fontWeight: 500 }}>
+                                    <Target size={12} strokeWidth={2} color="var(--ds-text-dim)" />
+                                    {AUDIT.engagementType}
+                                </span>
+                            </div>
+                            <h1 style={{ fontSize: "clamp(1.125rem,2.5vw,1.5rem)", fontWeight: 800, color: "var(--ds-text-primary)", letterSpacing: "-0.03em", lineHeight: 1.2, wordBreak: "break-word" }}>
+                                {AUDIT.title}
+                            </h1>
                         </div>
-                        {/* Title row */}
-                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                                    <span style={{ fontFamily: "var(--ds-mono)", fontSize: 11, color: "var(--ds-id-color)", background: "var(--ds-id-bg)", border: "1px solid var(--ds-id-border)", borderRadius: 6, padding: "2px 8px", letterSpacing: "0.04em" }}>
-                                        {AUDIT.id}
-                                    </span>
-                                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--ds-text-muted)", fontWeight: 500 }}>
-                                        <Target size={12} strokeWidth={2} color="var(--ds-text-dim)" />
-                                        {AUDIT.engagementType}
-                                    </span>
-                                </div>
-                                <h1 style={{ fontSize: "clamp(1.125rem,2.5vw,1.5rem)", fontWeight: 800, color: "var(--ds-text-primary)", letterSpacing: "-0.03em", lineHeight: 1.2, wordBreak: "break-word" }}>
-                                    {AUDIT.title}
-                                </h1>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                                <Btn icon={Clock} variant="ghost" aria-label="History" />
-                                <Btn icon={Download} label="Export" />
-                                <Btn icon={Edit} label="Edit" variant="primary" />
-                            </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                            <Btn icon={Clock} variant="ghost" aria-label="History" />
+                            <Btn icon={Download} label="Export" />
+                            <Btn icon={Edit} label="Edit" variant="primary" />
                         </div>
                     </div>
-                </header>
-
-                {/* ── PAGE BODY ──────────────────────────────────────────────────────── */}
-                <div className="ad-inner" style={{ maxWidth: 1480, margin: "0 auto", padding: "24px 16px 80px" }}>
+                </Card>
 
                     {/* Status + Stepper */}
                     <Card style={{ marginBottom: 16 }}>
@@ -647,8 +627,7 @@ export default function AuditDetailsPage() {
                             </div>
                         </main>
                     </div>
-                </div>
-            </div>
+            </section>
         </>
     );
 }

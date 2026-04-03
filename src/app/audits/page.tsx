@@ -9,9 +9,6 @@ import {
 
 // ─── Shared design-system CSS ────────────────────────────────────────────────
 export const DESIGN_SYSTEM_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap');
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 /* ── Light tokens ───────────────────────────────────────────────── */
 :root {
   --ds-font:              'DM Sans', sans-serif;
@@ -110,7 +107,6 @@ export const DESIGN_SYSTEM_CSS = `
 }
 
 /* ── Base ────────────────────────────────────────────────────────── */
-body { font-family: var(--ds-font); background: var(--ds-bg); color: var(--ds-text-secondary); }
 
 /* ── Scrollbar hide util ──────────────────────────────────────────── */
 .hide-sb::-webkit-scrollbar { display: none; }
@@ -211,13 +207,8 @@ export default function AuditExecutionPage() {
     (filterStatus === "All Statuses" || a.status === filterStatus)
   );
 
-  return (
-    <>
-      <style>{DESIGN_SYSTEM_CSS}{`
-        .ae-page { min-height:100vh; overflow-x:hidden; background:var(--ds-bg); font-family:var(--ds-font); color:var(--ds-text-secondary); }
-        .ae-inner { max-width:1480px; margin:0 auto; padding:24px 16px 80px; }
-        @media(min-width:640px)  { .ae-inner { padding:32px 24px 80px; } }
-        @media(min-width:1024px) { .ae-inner { padding:40px 32px 80px; } }
+  const auditPageCss = `${DESIGN_SYSTEM_CSS}
+        .ae-section { width:100%; padding-bottom:24px; }
 
         .ae-stat-grid { display:grid; grid-template-columns:repeat(1,1fr); gap:16px; margin-bottom:28px; }
         @media(min-width:600px)  { .ae-stat-grid { grid-template-columns:repeat(2,1fr); } }
@@ -262,10 +253,13 @@ export default function AuditExecutionPage() {
         .ae-links-badge:hover { border-color:var(--ds-indigo-border); background:var(--ds-indigo-light); }
 
         .ae-divider { width:1px; height:20px; background:var(--ds-border); flex-shrink:0; }
-      `}</style>
+      `;
 
-      <div className="ae-page">
-        <div className="ae-inner">
+  return (
+    <>
+      <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: auditPageCss }} />
+
+      <section className="ae-section">
 
           {/* Header */}
           <div className="ae-header-row" style={{ opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(-8px)", transition: "opacity 0.4s ease, transform 0.4s ease" }}>
@@ -422,8 +416,7 @@ export default function AuditExecutionPage() {
             </div>
           </div>
 
-        </div>
-      </div>
+      </section>
     </>
   );
 }
