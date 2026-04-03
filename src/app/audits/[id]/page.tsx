@@ -2,707 +2,653 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  ArrowLeft, Clock, Download, Edit, Trash2, ArrowRight, CheckCircle2,
-  XCircle, Target, Shield, AlertTriangle, TrendingUp, LayoutGrid,
-  FileText, CheckSquare, Lock, Users, BarChart3, LucideIcon, ChevronRight,
-  Calendar, Timer, Wallet,
+    ArrowLeft, Clock, Download, Edit, Trash2, ArrowRight, CheckCircle2,
+    XCircle, Target, Shield, AlertTriangle, TrendingUp, LayoutGrid,
+    FileText, CheckSquare, Lock, Users, BarChart3, LucideIcon,
+    ChevronRight, Calendar, Timer, Wallet,
 } from "lucide-react";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Import shared design system ─────────────────────────────────────────────
+const DESIGN_SYSTEM_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500;600&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-function cn(...classes: (string | false | undefined | null)[]) {
-  return classes.filter(Boolean).join(" ");
+:root {
+  --ds-font:              'DM Sans', sans-serif;
+  --ds-mono:              'DM Mono', monospace;
+  --ds-bg:                #f4f6fa;
+  --ds-surface:           #ffffff;
+  --ds-surface-raised:    #f9fafb;
+  --ds-border:            rgba(0,0,0,0.08);
+  --ds-border-subtle:     rgba(0,0,0,0.05);
+  --ds-text-primary:      #0f172a;
+  --ds-text-secondary:    #1e293b;
+  --ds-text-muted:        #64748b;
+  --ds-text-dim:          #94a3b8;
+  --ds-indigo:            #2E5599;
+  --ds-indigo-hover:      #244580;
+  --ds-indigo-light:      rgba(46,85,153,0.08);
+  --ds-indigo-border:     rgba(46,85,153,0.28);
+  --ds-indigo-dot-shadow: rgba(46,85,153,0.45);
+  --ds-amber:             #d97706;
+  --ds-amber-bg:          rgba(245,158,11,0.08);
+  --ds-amber-border:      rgba(245,158,11,0.25);
+  --ds-green:             #059669;
+  --ds-green-bg:          rgba(16,185,129,0.08);
+  --ds-green-border:      rgba(16,185,129,0.2);
+  --ds-red:               #dc2626;
+  --ds-red-bg:            rgba(239,68,68,0.08);
+  --ds-progress-track:    rgba(0,0,0,0.07);
+  --ds-checkbox:          #cbd5e1;
+  --ds-avatar-border:     #ffffff;
+  --ds-stat-bg:           linear-gradient(145deg,#ffffff 0%,#f8faff 100%);
+  --ds-card-shadow:       0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --ds-id-bg:             rgba(0,0,0,0.04);
+  --ds-id-border:         rgba(0,0,0,0.07);
+  --ds-id-color:          #94a3b8;
 }
+
+.dark {
+  --ds-bg:                #080e1c;
+  --ds-surface:           #111827;
+  --ds-surface-raised:    #0d1424;
+  --ds-border:            rgba(255,255,255,0.07);
+  --ds-border-subtle:     rgba(255,255,255,0.04);
+  --ds-text-primary:      #f9fafb;
+  --ds-text-secondary:    #e2e8f0;
+  --ds-text-muted:        #64748b;
+  --ds-text-dim:          #374151;
+  --ds-indigo:            #7ba3e0;
+  --ds-indigo-hover:      #4d7cc4;
+  --ds-indigo-light:      rgba(46,85,153,0.15);
+  --ds-indigo-border:     rgba(46,85,153,0.35);
+  --ds-indigo-dot-shadow: rgba(123,163,224,0.55);
+  --ds-amber:             #fbbf24;
+  --ds-amber-bg:          rgba(245,158,11,0.12);
+  --ds-amber-border:      rgba(245,158,11,0.28);
+  --ds-green:             #34d399;
+  --ds-green-bg:          rgba(16,185,129,0.12);
+  --ds-green-border:      rgba(16,185,129,0.25);
+  --ds-red:               #f87171;
+  --ds-red-bg:            rgba(239,68,68,0.12);
+  --ds-progress-track:    rgba(255,255,255,0.05);
+  --ds-checkbox:          #374151;
+  --ds-avatar-border:     #0d1424;
+  --ds-stat-bg:           linear-gradient(145deg,#111827 0%,#0f1728 100%);
+  --ds-card-shadow:       0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --ds-id-bg:             rgba(255,255,255,0.03);
+  --ds-id-border:         rgba(255,255,255,0.05);
+  --ds-id-color:          #374151;
+}
+
+body { font-family:var(--ds-font); background:var(--ds-bg); color:var(--ds-text-secondary); }
+.hide-sb::-webkit-scrollbar { display:none; }
+.hide-sb { -ms-overflow-style:none; scrollbar-width:none; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.fade-up { animation:fadeUp 0.25s ease-out both; }
+`;
+
+// ─── cn helper ────────────────────────────────────────────────────────────────
+function cn(...c: (string | false | undefined | null)[]) { return c.filter(Boolean).join(" "); }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface TeamMember { role: string; initials: string; dotColor: string; bgColor: string; textColor: string; }
 
-interface TeamMember {
-  role: string;
-  initials: string;
-  color: string;
-}
-
-interface AuditData {
-  id: string;
-  title: string;
-  type: string;
-  engagementType: string;
-  status: string;
-  scopeText: string;
-  approvalStatus: string;
-  auditSource: string;
-  inherentRisk: string;
-  entity: string;
-  entityCode: string;
-  department: string;
-  owner: string;
-  startDate: string;
-  endDate: string;
-  estHours: string;
-  budgetHours: string;
-  actualHours: string;
-  budgetSource: string;
-  objective: string;
-  scope: string;
-  createdOn: string;
-  updatedOn: string;
-  createdBy: string;
-  team: {
-    lead: { name: string; email: string; initials: string };
-    members: TeamMember[];
-  };
-}
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const AUDIT: AuditData = {
-  id: "AUD-2026-004",
-  title: "Quarterly IT Security Assessment",
-  type: "Operational",
-  engagementType: "Operational Audit Engagement",
-  status: "Draft",
-  scopeText: "Flexible scope · 10–15 controls",
-  approvalStatus: "Draft",
-  auditSource: "AdHoc",
-  inherentRisk: "—",
-  entity: "Accenture",
-  entityCode: "ACC-001",
-  department: "—",
-  owner: "Lead Auditor",
-  startDate: "Mar 30, 2026",
-  endDate: "Apr 29, 2026",
-  estHours: "0h",
-  budgetHours: "0h",
-  actualHours: "0h",
-  budgetSource: "Manual",
-  objective:
-    "To evaluate the effectiveness of the current IT security controls and identify potential vulnerabilities within the core infrastructure.",
-  scope:
-    "Review of access management protocols, firewall configurations, and incident response procedures across the North American data centers.",
-  createdOn: "Mar 30, 2026",
-  updatedOn: "Mar 30, 2026",
-  createdBy: "Admin",
-  team: {
+const AUDIT = {
+    id: "AUD-2026-004",
+    title: "Quarterly IT Security Assessment",
+    type: "Operational",
+    engagementType: "Operational Audit Engagement",
+    status: "Draft",
+    scopeText: "Flexible scope · 10–15 controls",
+    approvalStatus: "Draft",
+    auditSource: "AdHoc",
+    inherentRisk: "—",
+    entity: "Accenture",
+    entityCode: "ACC-001",
+    department: "—",
+    owner: "Lead Auditor",
+    startDate: "Mar 30, 2026",
+    endDate: "Apr 29, 2026",
+    estHours: "0h",
+    budgetHours: "0h",
+    actualHours: "0h",
+    budgetSource: "Manual",
+    objective: "To evaluate the effectiveness of the current IT security controls and identify potential vulnerabilities within the core infrastructure.",
+    scope: "Review of access management protocols, firewall configurations, and incident response procedures across the North American data centers.",
+    createdOn: "Mar 30, 2026",
+    updatedOn: "Mar 30, 2026",
+    createdBy: "Admin",
     lead: { name: "Sarah Jenkins", email: "s.jenkins@cpa-firm.com", initials: "SJ" },
     members: [
-      { role: "Auditor",       initials: "AU", color: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300" },
-      { role: "Process Owner", initials: "PO", color: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300" },
-      { role: "Control Owner", initials: "CO", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" },
-    ],
-  },
+        { role: "Auditor", initials: "AU", dotColor: "#2E5599", bgColor: "rgba(46,85,153,0.12)", textColor: "#2E5599" },
+        { role: "Process Owner", initials: "PO", dotColor: "#0ea5e9", bgColor: "rgba(14,165,233,0.12)", textColor: "#0ea5e9" },
+        { role: "Control Owner", initials: "CO", dotColor: "#10b981", bgColor: "rgba(16,185,129,0.12)", textColor: "#10b981" },
+    ] as TeamMember[],
 };
 
 // ─── Stepper ──────────────────────────────────────────────────────────────────
-
 const STEPS = [
-  { id: 1, label: "Planning",  tag: "Draft", status: "active" as const },
-  { id: 2, label: "Fieldwork", status: "locked" as const },
-  { id: 3, label: "Reporting", status: "locked" as const },
-  { id: 4, label: "Closed",    status: "locked" as const },
+    { id: 1, label: "Planning", tag: "Draft", active: true },
+    { id: 2, label: "Fieldwork", active: false },
+    { id: 3, label: "Reporting", active: false },
+    { id: 4, label: "Closed", active: false },
 ];
 
 function Stepper() {
-  return (
-    <div className="flex items-center overflow-x-auto hide-scrollbar">
-      {STEPS.map((step, i) => (
-        <React.Fragment key={step.id}>
-          <div className="flex flex-col items-center gap-2 shrink-0 min-w-[96px]">
-            <div
-              className={cn(
-                "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all select-none",
-                step.status === "active"
-                  ? "bg-violet-600 border-violet-600 text-white ring-4 ring-violet-100 dark:ring-violet-900/40"
-                  : "bg-neutral-50 border-neutral-200 text-neutral-400 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-500"
-              )}
-            >
-              {step.status === "locked" ? <Lock size={12} strokeWidth={2.5} /> : step.id}
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span
-                className={cn(
-                  "text-xs font-semibold",
-                  step.status === "active"
-                    ? "text-neutral-900 dark:text-white"
-                    : "text-neutral-400 dark:text-neutral-500"
-                )}
-              >
-                {step.label}
-              </span>
-              {step.tag && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 uppercase tracking-wide">
-                  {step.tag}
-                </span>
-              )}
-            </div>
-          </div>
-          {i < STEPS.length - 1 && (
-            <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700 min-w-[16px] mb-8 mx-0.5" />
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  );
+    return (
+        <div className="hide-sb" style={{ display: "flex", alignItems: "center", overflowX: "auto", paddingBottom: 4 }}>
+            {STEPS.map((step, i) => (
+                <React.Fragment key={step.id}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flexShrink: 0, minWidth: 100 }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 13, fontWeight: 700, border: "2px solid",
+                            borderColor: step.active ? "var(--ds-indigo)" : "var(--ds-border)",
+                            background: step.active ? "var(--ds-indigo)" : "var(--ds-surface-raised)",
+                            color: step.active ? "#fff" : "var(--ds-text-muted)",
+                            boxShadow: step.active ? "0 0 0 4px var(--ds-indigo-light)" : "none",
+                            transition: "all 0.2s ease",
+                        }}>
+                            {!step.active ? <Lock size={13} strokeWidth={2.5} /> : step.id}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: step.active ? "var(--ds-text-primary)" : "var(--ds-text-muted)" }}>{step.label}</span>
+                            {step.tag && (
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: "var(--ds-amber-bg)", color: "var(--ds-amber)", border: "1px solid var(--ds-amber-border)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{step.tag}</span>
+                            )}
+                        </div>
+                    </div>
+                    {i < STEPS.length - 1 && (
+                        <div style={{ flex: 1, height: 1, background: "var(--ds-border)", minWidth: 16, marginBottom: 28, marginLeft: 2, marginRight: 2 }} />
+                    )}
+                </React.Fragment>
+            ))}
+        </div>
+    );
 }
 
 // ─── Button ───────────────────────────────────────────────────────────────────
-
 type BtnVariant = "default" | "primary" | "danger" | "ghost";
 
-interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon?: LucideIcon;
-  label?: string;
-  variant?: BtnVariant;
+function Btn({ icon: Icon, label, variant = "default", style: extraStyle, ...rest }: {
+    icon?: LucideIcon; label?: string; variant?: BtnVariant;
+    style?: React.CSSProperties;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+    const base: React.CSSProperties = {
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        gap: 6, borderRadius: 10, fontSize: 13, fontWeight: 600,
+        cursor: "pointer", border: "1px solid", transition: "all 0.15s ease",
+        fontFamily: "var(--ds-font)", whiteSpace: "nowrap",
+        padding: label ? "8px 14px" : "8px",
+    };
+    const variants: Record<BtnVariant, React.CSSProperties> = {
+        default: { background: "var(--ds-surface)", borderColor: "var(--ds-border)", color: "var(--ds-text-secondary)", boxShadow: "var(--ds-card-shadow)" },
+        primary: { background: "var(--ds-indigo)", borderColor: "var(--ds-indigo-hover)", color: "#fff", boxShadow: "0 2px 8px var(--ds-indigo-light)" },
+        danger: { background: "var(--ds-surface)", borderColor: "var(--ds-border)", color: "var(--ds-red)", boxShadow: "var(--ds-card-shadow)" },
+        ghost: { background: "transparent", borderColor: "transparent", color: "var(--ds-text-muted)" },
+    };
+    return (
+        <button style={{ ...base, ...variants[variant], ...extraStyle }} {...rest}>
+            {Icon && <Icon size={14} strokeWidth={2} />}
+            {label && <span>{label}</span>}
+        </button>
+    );
 }
 
-function Btn({ icon: Icon, label, variant = "default", className, ...rest }: BtnProps) {
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-colors select-none whitespace-nowrap",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950",
-        "disabled:pointer-events-none disabled:opacity-50",
-        label ? "px-3.5 py-2" : "p-2",
-        variant === "default" &&
-          "bg-white border border-neutral-200 text-neutral-700 shadow-sm hover:bg-neutral-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700",
-        variant === "primary" &&
-          "bg-violet-600 border border-violet-700 text-white shadow-sm hover:bg-violet-700 dark:hover:bg-violet-500",
-        variant === "danger" &&
-          "bg-white border border-neutral-200 text-red-600 shadow-sm hover:bg-red-50 hover:border-red-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-red-400 dark:hover:bg-red-950/30",
-        variant === "ghost" &&
-          "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800",
-        className
-      )}
-      {...rest}
-    >
-      {Icon && <Icon size={15} strokeWidth={2} />}
-      {label && <span>{label}</span>}
-    </button>
-  );
-}
-
-// ─── Card primitives ─────────────────────────────────────────────────────────
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn(
-      "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm",
-      // FIX: prevent card children from escaping the card boundary
-      "overflow-hidden",
-      className
-    )}>
-      {children}
-    </div>
-  );
-}
-
-function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-2 px-5 py-3.5 border-b border-neutral-100 dark:border-neutral-800", className)}>
-      {children}
-    </div>
-  );
-}
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-type Accent = "violet" | "sky" | "amber" | "emerald";
-
-const ACCENT_ICON: Record<Accent, string> = {
-  violet:  "bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400",
-  sky:     "bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400",
-  amber:   "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400",
-  emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400",
-};
-
-const ACCENT_BAR: Record<Accent, string> = {
-  violet:  "from-violet-500",
-  sky:     "from-sky-500",
-  amber:   "from-amber-500",
-  emerald: "from-emerald-500",
-};
-
-function StatCard({ label, value, icon: Icon, accent }: {
-  label: string; value: string; icon: LucideIcon; accent: Accent;
-}) {
-  return (
-    <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 shadow-sm overflow-hidden flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 leading-tight">
-          {label}
-        </p>
-        <div className={cn("p-1.5 rounded-lg shrink-0", ACCENT_ICON[accent])}>
-          <Icon size={13} strokeWidth={2.5} />
+// ─── Card ─────────────────────────────────────────────────────────────────────
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+    return (
+        <div style={{ background: "var(--ds-surface)", border: "1px solid var(--ds-border)", borderRadius: 16, boxShadow: "var(--ds-card-shadow)", overflow: "hidden", ...style }}>
+            {children}
         </div>
-      </div>
-      <p className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight leading-none">
-        {value}
-      </p>
-      <div className={cn("absolute bottom-0 left-0 h-0.5 w-full bg-gradient-to-r to-transparent", ACCENT_BAR[accent])} />
-    </div>
-  );
+    );
 }
 
-// ─── Nav Item ─────────────────────────────────────────────────────────────────
-
-function NavItem({ label, icon: Icon, active, locked }: {
-  label: string; icon: LucideIcon; active?: boolean; locked?: boolean;
-}) {
-  return (
-    <button
-      disabled={locked}
-      className={cn(
-        "group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors text-left",
-        active
-          ? "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"
-          : locked
-          ? "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-      )}
-    >
-      <span className="flex items-center gap-2.5 min-w-0">
-        <Icon
-          size={15}
-          strokeWidth={2}
-          className={cn(
-            "shrink-0 transition-colors",
-            active   ? "text-violet-600 dark:text-violet-400" :
-            locked   ? "text-neutral-300 dark:text-neutral-600" :
-                       "text-neutral-400 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300"
-          )}
-        />
-        <span className="truncate">{label}</span>
-      </span>
-      {locked && <Lock size={11} className="shrink-0 text-neutral-300 dark:text-neutral-600" />}
-    </button>
-  );
+function CardHead({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", borderBottom: "1px solid var(--ds-border-subtle)", ...style }}>
+            {children}
+        </div>
+    );
 }
 
-// ─── Detail Item ──────────────────────────────────────────────────────────────
+// ─── Stat card ────────────────────────────────────────────────────────────────
+function StatCard({ label, value, icon: Icon, accent }: { label: string; value: string; icon: LucideIcon; accent: string }) {
+    return (
+        <div style={{ background: "var(--ds-stat-bg)", border: "1px solid var(--ds-border)", borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden", boxShadow: "var(--ds-card-shadow)", display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ position: "absolute", inset: "0 0 auto 0", height: 2, background: `linear-gradient(90deg,transparent,${accent},transparent)`, opacity: 0.7 }} />
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em" }}>{label}</p>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${accent}15`, border: `1px solid ${accent}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon size={14} strokeWidth={2.5} color={accent} />
+                </div>
+            </div>
+            <p style={{ fontSize: 30, fontWeight: 800, color: "var(--ds-text-primary)", lineHeight: 1, letterSpacing: "-0.03em" }}>{value}</p>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${accent},transparent)` }} />
+        </div>
+    );
+}
 
+// ─── Nav item ─────────────────────────────────────────────────────────────────
+function NavItem({ label, icon: Icon, active, locked }: { label: string; icon: LucideIcon; active?: boolean; locked?: boolean }) {
+    return (
+        <button disabled={locked} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            width: "100%", padding: "7px 12px", borderRadius: 9, border: "none",
+            background: active ? "var(--ds-indigo-light)" : "transparent",
+            color: active ? "var(--ds-indigo)" : locked ? "var(--ds-text-dim)" : "var(--ds-text-muted)",
+            cursor: locked ? "not-allowed" : "pointer",
+            fontSize: 13, fontWeight: active ? 600 : 500,
+            fontFamily: "var(--ds-font)", transition: "all 0.12s ease",
+            outline: "none",
+        }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <Icon size={14} strokeWidth={2} color={active ? "var(--ds-indigo)" : locked ? "var(--ds-text-dim)" : "var(--ds-text-muted)"} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+            </span>
+            {locked && <Lock size={11} color="var(--ds-text-dim)" />}
+        </button>
+    );
+}
+
+// ─── Detail item ─────────────────────────────────────────────────────────────
 function DetailItem({ label, value }: { label: string; value?: React.ReactNode }) {
-  const empty = !value || value === "—" || value === "0" || value === "0h";
-  return (
-    <div className="flex flex-col gap-1.5 min-w-0">
-      <dt className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-        {label}
-      </dt>
-      <dd className="text-sm font-medium text-neutral-800 dark:text-neutral-200 break-words">
-        {empty
-          ? <span className="text-neutral-300 dark:text-neutral-600 font-normal italic">Not set</span>
-          : value}
-      </dd>
-    </div>
-  );
+    const empty = !value || value === "—" || value === "0" || value === "0h";
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
+            <dt style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em" }}>{label}</dt>
+            <dd style={{ fontSize: 13, fontWeight: 600, color: empty ? "var(--ds-text-dim)" : "var(--ds-text-secondary)", fontStyle: empty ? "italic" : "normal", wordBreak: "break-word" }}>
+                {empty ? "Not set" : value}
+            </dd>
+        </div>
+    );
 }
 
-// ─── Gate Row ─────────────────────────────────────────────────────────────────
-
+// ─── Gate row ─────────────────────────────────────────────────────────────────
 function GateRow({ done, title, desc }: { done: boolean; title: string; desc: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      {done
-        ? <CheckCircle2 size={17} className="text-emerald-500 mt-0.5 shrink-0" strokeWidth={2.5} />
-        : <XCircle      size={17} className="text-neutral-300 dark:text-neutral-600 mt-0.5 shrink-0" strokeWidth={2} />}
-      <div className="min-w-0">
-        <p className={cn("text-sm font-semibold leading-tight", done ? "text-neutral-800 dark:text-neutral-200" : "text-neutral-600 dark:text-neutral-400")}>
-          {title}
-        </p>
-        <p className="mt-0.5 text-xs text-neutral-500 leading-relaxed">{desc}</p>
-      </div>
-    </div>
-  );
+    return (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            {done
+                ? <CheckCircle2 size={17} color="var(--ds-green)" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 1 }} />
+                : <XCircle size={17} color="var(--ds-border)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 1 }} />
+            }
+            <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: done ? "var(--ds-text-secondary)" : "var(--ds-text-muted)", marginBottom: 2 }}>{title}</p>
+                <p style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.5 }}>{desc}</p>
+            </div>
+        </div>
+    );
 }
 
-// ─── Progress Row ─────────────────────────────────────────────────────────────
-
+// ─── Progress row ─────────────────────────────────────────────────────────────
 function ProgressRow({ label, percent }: { label: string; percent: number }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex justify-between items-center">
-        <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">{label}</span>
-        <span className="text-xs font-bold tabular-nums text-neutral-500 dark:text-neutral-500">{percent}%</span>
-      </div>
-      <div className="h-1.5 w-full bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-        <div
-          className={cn(
-            "h-full rounded-full transition-all duration-700",
-            percent === 100
-              ? "bg-gradient-to-r from-violet-500 to-violet-400"
-              : "bg-neutral-200 dark:bg-neutral-700"
-          )}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
-  );
+    const color = percent === 100 ? "var(--ds-indigo)" : "var(--ds-border)";
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text-secondary)" }}>{label}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-mono)", color: "var(--ds-text-muted)" }}>{percent}%</span>
+            </div>
+            <div style={{ height: 4, background: "var(--ds-progress-track)", borderRadius: 99, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${percent}%`, background: percent === 100 ? `linear-gradient(90deg,var(--ds-indigo)88,var(--ds-indigo))` : color, borderRadius: 99, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", boxShadow: percent > 0 ? "0 0 8px var(--ds-indigo-light)" : "none" }} />
+            </div>
+        </div>
+    );
 }
 
 // ─── Nav groups ───────────────────────────────────────────────────────────────
-
-const NAV_GROUPS = [
-  {
-    heading: "Engagement",
-    items: [
-      { label: "Overview",        icon: LayoutGrid, active: true  },
-      { label: "Planning",        icon: Target                    },
-      { label: "Risk Assessment", icon: Shield                    },
-    ],
-  },
-  {
-    heading: "Execution",
-    items: [
-      { label: "Walkthroughs",  icon: CheckSquare, locked: true },
-      { label: "Testing",       icon: FileText,    locked: true },
-      { label: "Time Tracking", icon: Clock                     },
-    ],
-  },
-  {
-    heading: "Reporting",
-    items: [
-      { label: "Issues",  icon: AlertTriangle, locked: true },
-      { label: "Report",  icon: FileText,      locked: true },
-      { label: "Closure", icon: Lock,          locked: true },
-    ],
-  },
+const NAV = [
+    { heading: "Engagement", items: [{ label: "Overview", icon: LayoutGrid, active: true }, { label: "Planning", icon: Target }, { label: "Risk Assessment", icon: Shield }] },
+    { heading: "Execution", items: [{ label: "Walkthroughs", icon: CheckSquare, locked: true }, { label: "Testing", icon: FileText, locked: true }, { label: "Time Tracking", icon: Clock }] },
+    { heading: "Reporting", items: [{ label: "Issues", icon: AlertTriangle, locked: true }, { label: "Report", icon: FileText, locked: true }, { label: "Closure", icon: Lock, locked: true }] },
 ];
 
-// ─── Tab helpers ──────────────────────────────────────────────────────────────
-
 type Tab = "general" | "scope" | "timeline";
+const TAB_LABELS: Record<Tab, string> = { general: "General Details", scope: "Scope & Objectives", timeline: "Timeline & Budget" };
 
-const TAB_LABELS: Record<Tab, string> = {
-  general:  "General Details",
-  scope:    "Scope & Objectives",
-  timeline: "Timeline & Budget",
-};
+function SectionLabel({ children }: { children: React.ReactNode }) {
+    return <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", padding: "0 12px", marginBottom: 6 }}>{children}</p>;
+}
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
+// ─── Main Page Component ──────────────────────────────────────────────────────
 export default function AuditDetailsPage() {
-  const [mounted, setMounted] = useState(false);
-  const [tab, setTab] = useState<Tab>("general");
+    const [mounted, setMounted] = useState(false);
+    const [tab, setTab] = useState<Tab>("general");
 
-  useEffect(() => { setMounted(true); }, []);
-  if (!mounted) return null;
+    useEffect(() => { setMounted(true); }, []);
+    if (!mounted) return null;
 
-  return (
-    <>
-      <style>{`
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
+    // Fixed container: no overflow-x hidden, no isolation issues, solid background, lower z-index
+    return (
+        <>
+            <style>{DESIGN_SYSTEM_CSS}{`
+        /* No overflow-x hidden anywhere */
+        .ad-page, .ad-inner, .ad-main, .ad-two-col {
+          overflow-x: visible;
         }
-        .fade-up { animation: fadeUp 0.25s ease-out both; }
+        .ad-page {
+          min-height: 100vh;
+          background: var(--ds-bg);
+          isolation: isolate;
+        }
+        @media(min-width:640px)  { .ad-inner { padding:32px 24px 80px !important; } }
+        @media(min-width:1024px) { .ad-inner { padding:40px 32px 80px !important; } }
+
+        .ad-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(2,1fr);
+          gap: 12px;
+        }
+        @media(min-width:1024px) {
+          .ad-kpi-grid { grid-template-columns: repeat(4,1fr); }
+        }
+
+        .ad-two-col {
+          display: flex;
+          gap: 20px;
+          align-items: flex-start;
+        }
+        .ad-sidebar {
+          display: none;
+        }
+        @media(min-width:1024px) {
+          .ad-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 200px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 92px;
+          }
+        }
+        .ad-main {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .ad-bottom-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        @media(min-width:640px) {
+          .ad-bottom-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .ad-detail-grid {
+          display: grid;
+          grid-template-columns: repeat(1,1fr);
+          gap: 20px 28px;
+        }
+        @media(min-width:480px)  { .ad-detail-grid { grid-template-columns: repeat(2,1fr); } }
+        @media(min-width:1024px) { .ad-detail-grid { grid-template-columns: repeat(3,1fr); } }
+
+        .ad-scope-meta-grid {
+          display: grid;
+          grid-template-columns: repeat(2,1fr);
+          gap: 16px;
+        }
+        @media(min-width:640px)  { .ad-scope-meta-grid { grid-template-columns: repeat(4,1fr); } }
+
+        .ad-scope-text-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        @media(min-width:640px)  { .ad-scope-text-grid { grid-template-columns: 1fr 1fr; } }
       `}</style>
 
-      {/*
-        FIX: Added overflow-x: hidden at the root so nothing painted outside
-        the viewport edge escapes and causes horizontal scroll.
-      */}
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 antialiased overflow-x-hidden">
-
-        {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
-        <header className="sticky top-0 z-40 bg-neutral-50/90 dark:bg-neutral-950/90 backdrop-blur border-b border-neutral-200 dark:border-neutral-800">
-          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex flex-col gap-3">
-
-            {/* Breadcrumb */}
-            <button
-              onClick={() => window.history.back()}
-              className="flex w-fit items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
-            >
-              <ArrowLeft size={13} strokeWidth={2.5} />
-              Back to Audits
-            </button>
-
-            {/* Title row */}
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-widest bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700">
-                    {AUDIT.id}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                    <Target size={12} strokeWidth={2} className="text-neutral-400 dark:text-neutral-500" />
-                    {AUDIT.engagementType}
-                  </span>
-                </div>
-                {/* FIX: added break-words so long titles don't overflow on mobile */}
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight break-words">
-                  {AUDIT.title}
-                </h1>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Btn icon={Clock}    variant="ghost" aria-label="History" />
-                <Btn icon={Download} label="Export" />
-                <Btn icon={Edit}     label="Edit" variant="primary" />
-              </div>
-            </div>
-
-          </div>
-        </header>
-
-        {/* ══ PAGE BODY ════════════════════════════════════════════════════════ */}
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
-
-          {/* ── Status + Stepper ──────────────────────────────────────────────── */}
-          <Card>
-            {/* Top row */}
-            <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
-              <div className="flex flex-wrap items-center gap-3 min-w-0">
-                <span className="flex items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                  <Target size={14} strokeWidth={2} className="text-neutral-400 dark:text-neutral-500 shrink-0" />
-                  {AUDIT.type}
-                  <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                  <span className="text-xs font-normal text-neutral-400 dark:text-neutral-500">{AUDIT.scopeText}</span>
-                </span>
-                {/* Status pill */}
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 dark:bg-amber-500" />
-                  {AUDIT.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Btn icon={ArrowRight} label="Advance Phase" variant="primary" />
-                <Btn icon={Trash2}     label="Delete"        variant="danger"  />
-              </div>
-            </div>
-            {/* Stepper */}
-            <div className="px-5 py-5">
-              <Stepper />
-            </div>
-          </Card>
-
-          {/* ── Two-col layout ────────────────────────────────────────────────── */}
-          <div className="flex gap-5 items-start">
-
-            {/* ── Sidebar ───────────────────────────────────────────────────── */}
-            {/* FIX: sidebar is hidden on <lg and the main content fills full width */}
-            <aside className="hidden lg:flex flex-col gap-5 w-48 shrink-0 sticky top-[108px]">
-              {NAV_GROUPS.map((group) => (
-                <div key={group.heading} className="flex flex-col gap-0.5">
-                  <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-600">
-                    {group.heading}
-                  </p>
-                  {group.items.map((item) => (
-                    <NavItem
-                      key={item.label}
-                      label={item.label}
-                      icon={item.icon as LucideIcon}
-                      active={(item as { active?: boolean }).active}
-                      locked={(item as { locked?: boolean }).locked}
-                    />
-                  ))}
-                </div>
-              ))}
-            </aside>
-
-            {/* ── Main content ──────────────────────────────────────────────── */}
-            {/* FIX: min-w-0 is critical — without it a flex child ignores its
-                parent's width and can blow out the layout */}
-            <main className="flex-1 min-w-0 flex flex-col gap-5">
-
-              {/* KPIs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard label="Risks in Scope" value="0"   icon={Shield}        accent="violet"  />
-                <StatCard label="Checklist"       value="0%"  icon={CheckSquare}   accent="sky"     />
-                <StatCard label="Issues Found"    value="0"   icon={AlertTriangle} accent="amber"   />
-                <StatCard label="Progress"        value="0%"  icon={TrendingUp}    accent="emerald" />
-              </div>
-
-              {/* Gate requirements */}
-              <Card>
-                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-950/40 shrink-0">
-                      <ChevronRight size={14} className="text-violet-600 dark:text-violet-400" strokeWidth={2.5} />
-                    </div>
-                    <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                      Gate Requirements: Planning → Fieldwork
-                    </span>
-                  </div>
-                  <span className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 shrink-0">
-                    1 of 3 complete
-                  </span>
-                </div>
-                <div className="px-5 py-4 flex flex-col gap-4">
-                  <GateRow done  title="Audit scope defined"      desc="Objective and scope have been clearly documented." />
-                  <div className="h-px bg-neutral-50 dark:bg-neutral-800/60" />
-                  <GateRow done={false} title="Risk assigned"     desc="At least one risk must be assigned to the audit framework." />
-                  <div className="h-px bg-neutral-50 dark:bg-neutral-800/60" />
-                  <GateRow done={false} title="Control mapped to risk" desc="Assigned risks must have at least one mitigating control mapped." />
-                </div>
-              </Card>
-
-              {/* Detail tabs */}
-              {/* FIX: Card already has overflow-hidden; tab bar scrolls horizontally */}
-              <Card>
-                {/* Tab bar */}
-                <div className="flex border-b border-neutral-200 dark:border-neutral-800 overflow-x-auto hide-scrollbar px-1">
-                  {(["general", "scope", "timeline"] as Tab[]).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTab(t)}
-                      className={cn(
-                        "px-4 py-3.5 text-sm font-semibold border-b-2 whitespace-nowrap transition-all -mb-px",
-                        tab === t
-                          ? "border-violet-600 text-violet-600 dark:border-violet-500 dark:text-violet-400"
-                          : "border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300"
-                      )}
-                    >
-                      {TAB_LABELS[t]}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Tab body */}
-                <div className="p-5 sm:p-6 fade-up" key={tab}>
-                  {tab === "general" && (
-                    <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-                      <DetailItem label="Audit Number"         value={AUDIT.id}             />
-                      <DetailItem label="Audit Type"           value={AUDIT.type}           />
-                      <DetailItem label="Execution Type"       value="Operational"          />
-                      <DetailItem label="Approval Status"      value={AUDIT.approvalStatus} />
-                      <DetailItem label="Audit Source"         value={AUDIT.auditSource}    />
-                      <DetailItem label="Inherent Risk Rating" value={AUDIT.inherentRisk}   />
-                      <DetailItem label="Auditable Entity"     value={AUDIT.entity}         />
-                      <DetailItem label="Entity Code"          value={AUDIT.entityCode}     />
-                      <DetailItem label="Department"           value={AUDIT.department}     />
-                    </dl>
-                  )}
-
-                  {tab === "scope" && (
-                    <div className="flex flex-col gap-6">
-                      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-4 pb-5 border-b border-neutral-100 dark:border-neutral-800">
-                        <DetailItem label="Risk Score"       value="0" />
-                        <DetailItem label="Total Findings"   value="0" />
-                        <DetailItem label="Non-Conformities" value="0" />
-                        <DetailItem label="Observations"     value="0" />
-                      </dl>
-                      {/* FIX: stacks to single column on mobile */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="min-w-0">
-                          <h4 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-2">Objective</h4>
-                          <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed break-words">{AUDIT.objective}</p>
+            <div className="ad-page">
+                {/* ── HEADER (non‑sticky to avoid z‑index wars; use solid background) ── */}
+                <header style={{
+                    position: "relative",
+                    background: "var(--ds-bg)",
+                    borderBottom: "1px solid var(--ds-border)",
+                }}>
+                    <div style={{ maxWidth: 1480, margin: "0 auto", padding: "12px 16px" }}>
+                        {/* Breadcrumb */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                            <button
+                                onClick={() => window.history.back()}
+                                style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "var(--ds-text-muted)", fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-font)", padding: 0 }}
+                            >
+                                <ArrowLeft size={13} strokeWidth={2.5} />
+                                Back to Audits
+                            </button>
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-2">Scope</h4>
-                          <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed break-words">{AUDIT.scope}</p>
+                        {/* Title row */}
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                                    <span style={{ fontFamily: "var(--ds-mono)", fontSize: 11, color: "var(--ds-id-color)", background: "var(--ds-id-bg)", border: "1px solid var(--ds-id-border)", borderRadius: 6, padding: "2px 8px", letterSpacing: "0.04em" }}>
+                                        {AUDIT.id}
+                                    </span>
+                                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--ds-text-muted)", fontWeight: 500 }}>
+                                        <Target size={12} strokeWidth={2} color="var(--ds-text-dim)" />
+                                        {AUDIT.engagementType}
+                                    </span>
+                                </div>
+                                <h1 style={{ fontSize: "clamp(1.125rem,2.5vw,1.5rem)", fontWeight: 800, color: "var(--ds-text-primary)", letterSpacing: "-0.03em", lineHeight: 1.2, wordBreak: "break-word" }}>
+                                    {AUDIT.title}
+                                </h1>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                                <Btn icon={Clock} variant="ghost" aria-label="History" />
+                                <Btn icon={Download} label="Export" />
+                                <Btn icon={Edit} label="Edit" variant="primary" />
+                            </div>
                         </div>
-                      </div>
                     </div>
-                  )}
+                </header>
 
-                  {tab === "timeline" && (
-                    <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-                      <DetailItem label="Planned Start Date" value={
-                        <span className="inline-flex items-center gap-1.5">
-                          <Calendar size={13} className="text-neutral-400 shrink-0" />
-                          {AUDIT.startDate}
-                        </span>
-                      } />
-                      <DetailItem label="Planned End Date" value={
-                        <span className="inline-flex items-center gap-1.5">
-                          <Calendar size={13} className="text-neutral-400 shrink-0" />
-                          {AUDIT.endDate}
-                        </span>
-                      } />
-                      <DetailItem label="Owner"            value={AUDIT.owner}       />
-                      <DetailItem label="Estimated Hours"  value={
-                        <span className="inline-flex items-center gap-1.5">
-                          <Timer size={13} className="text-neutral-400 shrink-0" />
-                          {AUDIT.estHours}
-                        </span>
-                      } />
-                      <DetailItem label="Budget Hours" value={
-                        <span className="inline-flex items-center gap-1.5">
-                          <Wallet size={13} className="text-neutral-400 shrink-0" />
-                          {AUDIT.budgetHours}
-                        </span>
-                      } />
-                      <DetailItem label="Actual Hours"     value={AUDIT.actualHours}  />
-                      <DetailItem label="Budget Source"    value={AUDIT.budgetSource} />
-                    </dl>
-                  )}
+                {/* ── PAGE BODY ──────────────────────────────────────────────────────── */}
+                <div className="ad-inner" style={{ maxWidth: 1480, margin: "0 auto", padding: "24px 16px 80px" }}>
+
+                    {/* Status + Stepper */}
+                    <Card style={{ marginBottom: 16 }}>
+                        <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--ds-border-subtle)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: "var(--ds-text-muted)" }}>
+                                    <Target size={13} strokeWidth={2} color="var(--ds-text-dim)" />
+                                    {AUDIT.type}
+                                    <span style={{ color: "var(--ds-border)" }}>·</span>
+                                    <span style={{ fontSize: 12, fontWeight: 400 }}>{AUDIT.scopeText}</span>
+                                </span>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "var(--ds-amber-bg)", color: "var(--ds-amber)", border: "1px solid var(--ds-amber-border)" }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ds-amber)", display: "inline-block" }} />
+                                    {AUDIT.status}
+                                </span>
+                            </div>
+                            <div style={{ display: "flex", gap: 8 }}>
+                                <Btn icon={ArrowRight} label="Advance Phase" variant="primary" />
+                                <Btn icon={Trash2} label="Delete" variant="danger" />
+                            </div>
+                        </div>
+                        <div style={{ padding: "18px 20px" }}>
+                            <Stepper />
+                        </div>
+                    </Card>
+
+                    {/* Two-col layout */}
+                    <div className="ad-two-col">
+
+                        {/* Sidebar */}
+                        <aside className="ad-sidebar">
+                            {NAV.map(group => (
+                                <div key={group.heading}>
+                                    <SectionLabel>{group.heading}</SectionLabel>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                        {group.items.map(item => (
+                                            <NavItem key={item.label} label={item.label} icon={item.icon as LucideIcon} active={(item as { active?: boolean }).active} locked={(item as { locked?: boolean }).locked} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </aside>
+
+                        {/* Main */}
+                        <main className="ad-main">
+
+                            {/* KPI grid */}
+                            <div className="ad-kpi-grid">
+                                <StatCard label="Risks in Scope" value="0" icon={Shield} accent="#2E5599" />
+                                <StatCard label="Checklist" value="0%" icon={CheckSquare} accent="#0ea5e9" />
+                                <StatCard label="Issues Found" value="0" icon={AlertTriangle} accent="#d97706" />
+                                <StatCard label="Progress" value="0%" icon={TrendingUp} accent="#10b981" />
+                            </div>
+
+                            {/* Gate requirements */}
+                            <Card>
+                                <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--ds-border-subtle)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--ds-indigo-light)", border: "1px solid var(--ds-indigo-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <ChevronRight size={14} color="var(--ds-indigo)" strokeWidth={2.5} />
+                                        </div>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-primary)" }}>Gate Requirements: Planning → Fieldwork</span>
+                                    </div>
+                                    <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "var(--ds-amber-bg)", color: "var(--ds-amber)", border: "1px solid var(--ds-amber-border)" }}>
+                                        1 of 3 complete
+                                    </span>
+                                </div>
+                                <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+                                    <GateRow done title="Audit scope defined" desc="Objective and scope have been clearly documented." />
+                                    <div style={{ height: 1, background: "var(--ds-border-subtle)" }} />
+                                    <GateRow done={false} title="Risk assigned" desc="At least one risk must be assigned to the audit framework." />
+                                    <div style={{ height: 1, background: "var(--ds-border-subtle)" }} />
+                                    <GateRow done={false} title="Control mapped to risk" desc="Assigned risks must have at least one mitigating control mapped." />
+                                </div>
+                            </Card>
+
+                            {/* Detail tabs */}
+                            <Card>
+                                {/* Tab bar */}
+                                <div className="hide-sb" style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid var(--ds-border)", overflowX: "auto", padding: "0 20px" }}>
+                                    {(["general", "scope", "timeline"] as Tab[]).map(t => (
+                                        <button key={t} onClick={() => setTab(t)} style={{
+                                            padding: "14px 16px 12px", fontSize: 13, fontWeight: 600, border: "none",
+                                            borderBottom: `2px solid ${tab === t ? "var(--ds-indigo)" : "transparent"}`,
+                                            background: "none", cursor: "pointer", whiteSpace: "nowrap",
+                                            color: tab === t ? "var(--ds-indigo)" : "var(--ds-text-muted)",
+                                            fontFamily: "var(--ds-font)", transition: "color 0.12s, border-color 0.12s",
+                                            marginBottom: -1,
+                                        }}>
+                                            {TAB_LABELS[t]}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Tab content */}
+                                <div className="fade-up" key={tab} style={{ padding: "20px 20px 22px" }}>
+                                    {tab === "general" && (
+                                        <dl className="ad-detail-grid">
+                                            <DetailItem label="Audit Number" value={AUDIT.id} />
+                                            <DetailItem label="Audit Type" value={AUDIT.type} />
+                                            <DetailItem label="Execution Type" value="Operational" />
+                                            <DetailItem label="Approval Status" value={AUDIT.approvalStatus} />
+                                            <DetailItem label="Audit Source" value={AUDIT.auditSource} />
+                                            <DetailItem label="Inherent Risk Rating" value={AUDIT.inherentRisk} />
+                                            <DetailItem label="Auditable Entity" value={AUDIT.entity} />
+                                            <DetailItem label="Entity Code" value={AUDIT.entityCode} />
+                                            <DetailItem label="Department" value={AUDIT.department} />
+                                        </dl>
+                                    )}
+                                    {tab === "scope" && (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                                            <dl className="ad-scope-meta-grid" style={{ paddingBottom: 16, borderBottom: "1px solid var(--ds-border-subtle)" }}>
+                                                <DetailItem label="Risk Score" value="0" />
+                                                <DetailItem label="Total Findings" value="0" />
+                                                <DetailItem label="Non-Conformities" value="0" />
+                                                <DetailItem label="Observations" value="0" />
+                                            </dl>
+                                            <div className="ad-scope-text-grid">
+                                                <div style={{ minWidth: 0 }}>
+                                                    <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Objective</p>
+                                                    <p style={{ fontSize: 13, color: "var(--ds-text-secondary)", lineHeight: 1.7, wordBreak: "break-word" }}>{AUDIT.objective}</p>
+                                                </div>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Scope</p>
+                                                    <p style={{ fontSize: 13, color: "var(--ds-text-secondary)", lineHeight: 1.7, wordBreak: "break-word" }}>{AUDIT.scope}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {tab === "timeline" && (
+                                        <dl className="ad-detail-grid">
+                                            <DetailItem label="Planned Start Date" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Calendar size={12} color="var(--ds-text-dim)" />{AUDIT.startDate}</span>} />
+                                            <DetailItem label="Planned End Date" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Calendar size={12} color="var(--ds-text-dim)" />{AUDIT.endDate}</span>} />
+                                            <DetailItem label="Owner" value={AUDIT.owner} />
+                                            <DetailItem label="Estimated Hours" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Timer size={12} color="var(--ds-text-dim)" />{AUDIT.estHours}</span>} />
+                                            <DetailItem label="Budget Hours" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Wallet size={12} color="var(--ds-text-dim)" />{AUDIT.budgetHours}</span>} />
+                                            <DetailItem label="Actual Hours" value={AUDIT.actualHours} />
+                                            <DetailItem label="Budget Source" value={AUDIT.budgetSource} />
+                                        </dl>
+                                    )}
+                                </div>
+
+                                {/* Footer */}
+                                <div style={{ padding: "10px 20px", borderTop: "1px solid var(--ds-border-subtle)", background: "var(--ds-surface-raised)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, fontSize: 12, fontWeight: 500, color: "var(--ds-text-muted)" }}>
+                                    <span>Created by <strong style={{ color: "var(--ds-text-secondary)", fontWeight: 700 }}>{AUDIT.createdBy}</strong> · {AUDIT.createdOn}</span>
+                                    <span style={{ fontFamily: "var(--ds-mono)", fontSize: 11 }}>Updated {AUDIT.updatedOn}</span>
+                                </div>
+                            </Card>
+
+                            {/* Team + Progress */}
+                            <div className="ad-bottom-grid">
+
+                                {/* Team card */}
+                                <Card>
+                                    <CardHead>
+                                        <Users size={14} strokeWidth={2} color="var(--ds-text-muted)" />
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-secondary)" }}>Audit Team</span>
+                                    </CardHead>
+                                    <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "var(--ds-surface-raised)", border: "1px solid var(--ds-border-subtle)" }}>
+                                            <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#2E5599,#4a7acc)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                                                {AUDIT.lead.initials}
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-primary)", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{AUDIT.lead.name}</p>
+                                                <p style={{ fontSize: 11, color: "var(--ds-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Lead Auditor · {AUDIT.lead.email}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Members</p>
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                                {AUDIT.members.map((m, i) => (
+                                                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 8, border: "1px solid var(--ds-border)", background: "var(--ds-surface)" }}>
+                                                        <div style={{ width: 22, height: 22, borderRadius: "50%", background: m.bgColor, color: m.textColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, flexShrink: 0 }}>{m.initials}</div>
+                                                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text-secondary)" }}>{m.role}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+
+                                {/* Progress card */}
+                                <Card>
+                                    <CardHead>
+                                        <BarChart3 size={14} strokeWidth={2} color="var(--ds-text-muted)" />
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-secondary)" }}>Phase Progress</span>
+                                    </CardHead>
+                                    <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+                                        <ProgressRow label="Planning" percent={100} />
+                                        <ProgressRow label="Fieldwork" percent={0} />
+                                        <ProgressRow label="Reporting" percent={0} />
+                                        <ProgressRow label="Closure" percent={0} />
+                                    </div>
+                                </Card>
+
+                            </div>
+                        </main>
+                    </div>
                 </div>
-
-                {/* Card footer */}
-                <div className="px-5 sm:px-6 py-3 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-neutral-400 dark:text-neutral-500">
-                  <span>
-                    Created by{" "}
-                    <span className="text-neutral-600 dark:text-neutral-400 font-semibold">{AUDIT.createdBy}</span>
-                    {" "}· {AUDIT.createdOn}
-                  </span>
-                  <span>Updated {AUDIT.updatedOn}</span>
-                </div>
-              </Card>
-
-              {/* Team + Progress */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-                {/* Team Card */}
-                <Card>
-                  <CardHeader>
-                    <Users size={14} strokeWidth={2} className="text-neutral-400 dark:text-neutral-500" />
-                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Audit Team</span>
-                  </CardHeader>
-                  <div className="p-4 flex flex-col gap-4">
-                    {/* Lead */}
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800">
-                      <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white text-sm font-bold select-none">
-                        {AUDIT.team.lead.initials}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                          {AUDIT.team.lead.name}
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                          Lead Auditor · {AUDIT.team.lead.email}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Members */}
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-2.5">
-                        Members
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {AUDIT.team.members.map((m, i) => (
-                          <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
-                            <span className={cn("w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black shrink-0 select-none", m.color)}>
-                              {m.initials}
-                            </span>
-                            <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                              {m.role}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Progress Card */}
-                <Card>
-                  <CardHeader>
-                    <BarChart3 size={14} strokeWidth={2} className="text-neutral-400 dark:text-neutral-500" />
-                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Phase Progress</span>
-                  </CardHeader>
-                  <div className="p-4 flex flex-col gap-4">
-                    <ProgressRow label="Planning"  percent={100} />
-                    <ProgressRow label="Fieldwork" percent={0}   />
-                    <ProgressRow label="Reporting" percent={0}   />
-                    <ProgressRow label="Closure"   percent={0}   />
-                  </div>
-                </Card>
-
-              </div>
-            </main>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+            </div>
+        </>
+    );
 }
