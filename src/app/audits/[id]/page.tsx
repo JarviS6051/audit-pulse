@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
     ArrowLeft, Clock, Download, Trash2, CheckCircle2, FlaskConical,
     Target, Shield, AlertTriangle, FileText, CheckSquare, Zap, Search,
     Lock, CalendarDays, CalendarRange, Filter, ChevronDown, Circle,
-    ArrowRight, Users, LayoutGrid, LucideIcon, MoreHorizontal, Settings2, SlidersHorizontal
+    ArrowRight, Users, LayoutGrid, LucideIcon, MoreHorizontal, Settings2, SlidersHorizontal,
+    Sun, Moon
 } from "lucide-react";
 
 // ─── Local Page Design System ────────────────────────────────────────────────
@@ -66,7 +68,50 @@ const PAGE_CSS = `
   --radius-pill: 9999px;
 }
 
-body { background-color: var(--bg-page); margin: 0; }
+/* Premium Dark Theme (Supports both class="dark" and data-theme="dark") */
+:root.dark,
+[data-theme='dark'] {
+  --bg-page: #020817; 
+  --bg-surface: #0f172a;
+  --bg-surface-hover: #1e293b;
+  --bg-surface-active: #334155;
+  
+  --border-light: #0f172a;
+  --border-base: #1e293b;
+  --border-strong: #334155;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  --accent-brand: #6366f1;
+  --accent-brand-hover: #818cf8;
+  --accent-brand-bg: rgba(99, 102, 241, 0.15);
+  --accent-brand-text: #a5b4fc;
+
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --success-text: #34d399;
+  --success-border: rgba(16, 185, 129, 0.2);
+  
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --danger-text: #f87171;
+  --danger-border: rgba(239, 68, 68, 0.2);
+  
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --warning-text: #fbbf24;
+  --warning-border: rgba(245, 158, 11, 0.2);
+
+  --info-bg: rgba(14, 165, 233, 0.12);
+  --info-text: #38bdf8;
+  --info-border: rgba(14, 165, 233, 0.2);
+  
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+}
+
+body { background-color: var(--bg-page); margin: 0; color: var(--text-primary); transition: background-color 0.3s ease, color 0.3s ease; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
@@ -83,6 +128,7 @@ body { background-color: var(--bg-page); margin: 0; }
   align-items: center;
   z-index: 20;
   position: relative;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Horizontal Navigation */
@@ -98,6 +144,7 @@ body { background-color: var(--bg-page); margin: 0; }
   z-index: 15;
   box-shadow: var(--shadow-sm);
   overflow-x: auto;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 .horizontal-nav-bar::-webkit-scrollbar { display: none; }
 
@@ -157,6 +204,7 @@ body { background-color: var(--bg-page); margin: 0; }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .data-grid-row {
@@ -193,6 +241,7 @@ body { background-color: var(--bg-page); margin: 0; }
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .search-input { 
@@ -202,8 +251,11 @@ body { background-color: var(--bg-page); margin: 0; }
   border-radius: var(--radius-sm); 
   font-size: 14px; 
   outline: none; 
+  background: var(--bg-surface);
+  color: var(--text-primary);
   transition: all 0.2s;
 }
+.search-input::placeholder { color: var(--text-muted); }
 .search-input:focus { border-color: var(--accent-brand); box-shadow: 0 0 0 3px var(--accent-brand-bg); }
 `;
 
@@ -311,7 +363,7 @@ function Btn({ icon: Icon, label, variant = "default", style, ...rest }: BtnProp
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function AuditWorkspace() {
     return (
-        <Suspense fallback={<div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Loading workspace...</div>}>
+        <Suspense fallback={<div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Loading workspace...</div>}>
             <AuditExecutionUI />
         </Suspense>
     );
@@ -321,17 +373,23 @@ function AuditExecutionUI() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const { theme, setTheme, systemTheme } = useTheme();
 
     const activeView = searchParams?.get("tab") || "testing";
-    const [mounted, setMounted] = useState<boolean>(false);
 
+    // We only use mounted to handle the theme icon swap, avoiding SSR mismatch.
+    const [mounted, setMounted] = useState<boolean>(false);
     useEffect(() => { setMounted(true); }, []);
-    if (!mounted) return null;
 
     const handleNavClick = (tabId: string) => {
         const params = new URLSearchParams(searchParams?.toString() || "");
         params.set("tab", tabId);
         router.push(`${pathname}?${params.toString()}`);
+    };
+
+    const currentTheme = theme === "system" ? systemTheme : theme;
+    const toggleTheme = () => {
+        setTheme(currentTheme === "dark" ? "light" : "dark");
     };
 
     return (
@@ -356,7 +414,7 @@ function AuditExecutionUI() {
                         </div>
                     </div>
 
-                    {/* Compact Stepper */}
+                    {/* Compact Stepper & Theme Toggle */}
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "var(--bg-page)", padding: "4px", borderRadius: "var(--radius-pill)", border: "1px solid var(--border-base)" }}>
                             {STEPS.map((step, i) => {
@@ -380,6 +438,14 @@ function AuditExecutionUI() {
                                 );
                             })}
                         </div>
+                        <div style={{ width: "1px", height: "24px", background: "var(--border-base)", margin: "0 4px" }} />
+                        <Btn
+                            icon={mounted ? (currentTheme === "dark" ? Sun : Moon) : Sun}
+                            variant="ghost"
+                            onClick={toggleTheme}
+                            style={{ borderRadius: "var(--radius-pill)" }}
+                            aria-label="Toggle Theme"
+                        />
                         <Btn label="Advance" icon={ArrowRight} variant="primary" style={{ borderRadius: "var(--radius-pill)" }} />
                     </div>
                 </header>
