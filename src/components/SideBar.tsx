@@ -4,7 +4,6 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
@@ -42,7 +41,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import auditpulse from "@/assets/auditpulse.png";
 
 const MENU_GROUPS = [
   {
@@ -129,7 +127,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        flex flex-col h-screen
+        flex flex-col h-full
         shrink-0 select-none
         transition-all duration-300 ease-in-out
         relative z-20
@@ -137,83 +135,23 @@ export default function Sidebar() {
         ${isCollapsed ? "w-[72px]" : "w-[260px]"}
       `}
     >
-      {/* ── HEADER ───────────────────────────────────────────────── */}
-      <div
-        className={`
-          relative flex items-center h-16 shrink-0 overflow-hidden 
-          border-b border-white/10 
-          transition-all duration-300 ease-in-out
-          ${isCollapsed ? "px-0 justify-center" : "px-4"}
-        `}
-      >
-        <div
-          onClick={() => isCollapsed && setIsCollapsed(false)}
-          title={isCollapsed ? "Click to expand sidebar" : ""}
-          className={`
-            overflow-hidden shrink-0
-            transition-all duration-300 ease-in-out
-            ${isCollapsed
-              ? "w-[36px] cursor-pointer hover:opacity-80 hover:scale-105 active:scale-95"
-              : "w-[152px]"
-            }
-          `}
-        >
-          {/* Note: Ensure 'auditpulse' image has white text/logo to show up on the blue background */}
-          {mounted && (
-            <Image
-              src={auditpulse}
-              alt="AuditPulse"
-              width={152}
-              height={36}
-              className="object-left object-contain h-[36px] w-[152px] max-w-none brightness-0 invert"
-              // Added 'brightness-0 invert' to turn your logo white temporarily. 
-              // Remove those classes if your logo is already white/transparent.
-              priority
-            />
-          )}
-        </div>
-
-        <button
-          onClick={() => setIsCollapsed(true)}
-          aria-label="Collapse sidebar"
-          className={`
-            absolute flex items-center justify-center
-            w-8 h-8 rounded-md
-            border border-white/20
-            text-blue-100
-            hover:bg-white/10 hover:text-white
-            bg-[#244580]
-            shadow-sm z-10
-            transition-all duration-300 ease-in-out
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50
-            right-4
-            ${isCollapsed
-              ? "opacity-0 scale-75 translate-x-4 pointer-events-none"
-              : "opacity-100 scale-100 translate-x-0"
-            }
-          `}
-        >
-          <ChevronLeft className="w-[18px] h-[18px] transition-transform duration-300" />
-        </button>
-      </div>
-
       {/* ── SCROLLABLE NAV ───────────────────────────────────────── */}
       <nav
         className="
           flex-1 overflow-y-auto overflow-x-hidden
-          pb-6 pt-2
+          pb-4 pt-5
           [&::-webkit-scrollbar]:hidden
           [-ms-overflow-style:none]
           [scrollbar-width:none]
         "
       >
-        <div className="flex flex-col space-y-1">
+        <div className="flex flex-col">
           {MENU_GROUPS.map((group, groupIdx) => (
             <div
               key={groupIdx}
-              className={`flex flex-col ${groupIdx > 0 ? "mt-5" : ""}`}
+              className={`flex flex-col ${groupIdx > 0 ? "mt-4" : ""}`}
             >
-              <div className="relative h-7 flex items-center px-4 mb-1">
+              <div className="relative h-8 flex items-center px-4 mb-1">
                 <h3
                   className={`
                     absolute left-5
@@ -230,14 +168,42 @@ export default function Sidebar() {
                 >
                   {group.title}
                 </h3>
-                <div
-                  className={`
-                    absolute left-1/2 -translate-x-1/2
-                    h-px bg-white/10
-                    transition-all duration-300 ease-in-out
-                    ${isCollapsed ? "w-8 opacity-100" : "w-0 opacity-0"}
-                  `}
-                />
+
+                {/* ── INLINE COLLAPSE TOGGLE ── */}
+                {/* Sits on the same row as the first group title to eliminate blank space */}
+                {groupIdx === 0 && (
+                  <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    className={`
+                      absolute flex items-center justify-center
+                      w-7 h-7 rounded-md
+                      border border-white/10
+                      text-blue-100
+                      hover:bg-white/20 hover:text-white
+                      bg-white/5
+                      transition-all duration-300 z-10
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50
+                      ${isCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"}
+                    `}
+                  >
+                    <ChevronLeft
+                      className={`w-[16px] h-[16px] transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                )}
+
+                {/* Divider for subsequent collapsed groups */}
+                {groupIdx > 0 && (
+                  <div
+                    className={`
+                      absolute left-1/2 -translate-x-1/2
+                      h-px bg-white/10
+                      transition-all duration-300 ease-in-out
+                      ${isCollapsed ? "w-6 opacity-100" : "w-0 opacity-0"}
+                    `}
+                  />
+                )}
               </div>
 
               <ul className="flex flex-col gap-0.5 px-3">
@@ -342,17 +308,10 @@ export default function Sidebar() {
           </span>
         </div>
 
-        <div className="flex items-center h-[68px] px-3 cursor-pointer hover:bg-white/5 transition-colors group">
-          <div
-            className={`
-              relative flex items-center justify-center
-              w-10 h-10 shrink-0
-              transition-all duration-300 ease-in-out
-              ${isCollapsed ? "mx-auto" : "mx-0"}
-            `}
-          >
+        <div className={`flex items-center h-[68px] cursor-pointer hover:bg-white/5 transition-colors group ${isCollapsed ? 'justify-center px-0' : 'px-3'}`}>
+          <div className="relative flex items-center justify-center w-10 h-10 shrink-0">
             <Avatar className="w-9 h-9 rounded-lg border border-white/20 group-hover:border-white/40 transition-colors shadow-sm bg-white/10">
-              <AvatarFallback className="bg-transparent text-white text-sm font-bold rounded-lg transition-transform group-hover:scale-105">
+              <AvatarFallback className="bg-transparent text-white text-[13px] font-bold rounded-lg transition-transform group-hover:scale-105">
                 A
               </AvatarFallback>
             </Avatar>

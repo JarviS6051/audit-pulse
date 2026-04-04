@@ -5,134 +5,201 @@ import { useRouter } from "next/navigation";
 import {
   Search, Plus, Clipboard, Clock, PlayCircle, CheckCircle2,
   List, LayoutGrid, MoreHorizontal, Link2, Calendar, ChevronDown,
+  ShieldAlert, Activity
 } from "lucide-react";
 
 // ─── Shared design-system CSS ────────────────────────────────────────────────
 export const DESIGN_SYSTEM_CSS = `
 /* ── Light tokens ───────────────────────────────────────────────── */
 :root {
-  --ds-font:              'DM Sans', sans-serif;
-  --ds-mono:              'DM Mono', monospace;
+  --ds-font:              'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
+  --ds-mono:              'JetBrains Mono', 'DM Mono', ui-monospace, monospace;
 
-  --ds-bg:                #f4f6fa;
+  --ds-bg:                #f8fafc;
   --ds-surface:           #ffffff;
-  --ds-surface-raised:    #f9fafb;
-  --ds-border:            rgba(0,0,0,0.08);
-  --ds-border-subtle:     rgba(0,0,0,0.05);
+  --ds-surface-hover:     #f8fafc;
+  --ds-border:            #e2e8f0;
+  --ds-border-subtle:     #f1f5f9;
+  --ds-ring:              rgba(46,85,153,0.15);
 
   --ds-text-primary:      #0f172a;
-  --ds-text-secondary:    #1e293b;
+  --ds-text-secondary:    #334155;
   --ds-text-muted:        #64748b;
   --ds-text-dim:          #94a3b8;
 
   --ds-indigo:            #2E5599;
   --ds-indigo-hover:      #244580;
-  --ds-indigo-light:      rgba(46,85,153,0.08);
-  --ds-indigo-border:     rgba(46,85,153,0.28);
-  --ds-indigo-dot-shadow: rgba(46,85,153,0.45);
+  --ds-indigo-bg:         rgba(46,85,153,0.06);
+  --ds-indigo-border:     rgba(46,85,153,0.15);
 
   --ds-amber:             #d97706;
-  --ds-amber-bg:          rgba(245,158,11,0.08);
-  --ds-amber-border:      rgba(245,158,11,0.25);
+  --ds-amber-bg:          #fffbeb;
+  --ds-amber-border:      #fde68a;
+  
   --ds-green:             #059669;
-  --ds-green-bg:          rgba(16,185,129,0.08);
-  --ds-green-border:      rgba(16,185,129,0.2);
+  --ds-green-bg:          #ecfdf5;
+  --ds-green-border:      #a7f3d0;
+  
   --ds-red:               #dc2626;
-  --ds-red-bg:            rgba(239,68,68,0.08);
+  --ds-red-bg:            #fef2f2;
+  --ds-red-border:        #fecaca;
+  
+  --ds-sky:               #0284c7;
+  --ds-sky-bg:            #f0f9ff;
+  --ds-sky-border:        #bae6fd;
 
-  --ds-thead-bg:          rgba(0,0,0,0.025);
-  --ds-row-hover:         rgba(46,85,153,0.04);
-  --ds-progress-track:    rgba(0,0,0,0.07);
+  --ds-thead-bg:          #f8fafc;
+  --ds-row-hover:         #f8fafc;
+  --ds-progress-track:    #f1f5f9;
   --ds-checkbox:          #cbd5e1;
   --ds-avatar-border:     #ffffff;
-  --ds-avatar-extra-bg:   #e2e8f0;
-  --ds-avatar-extra-tx:   #64748b;
+  --ds-avatar-extra-bg:   #f1f5f9;
+  --ds-avatar-extra-tx:   #475569;
   --ds-input-bg:          #ffffff;
-  --ds-table-divider:     rgba(0,0,0,0.05);
-  --ds-footer-border:     rgba(0,0,0,0.06);
-  --ds-id-bg:             rgba(0,0,0,0.04);
-  --ds-id-border:         rgba(0,0,0,0.07);
-  --ds-id-color:          #94a3b8;
-  --ds-links-border:      rgba(0,0,0,0.10);
 
-  --ds-stat-bg:           linear-gradient(145deg,#ffffff 0%,#f8faff 100%);
-  --ds-card-shadow:       0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --ds-card-shadow:       0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ds-hover-shadow:      0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --ds-btn-shadow:        0 1px 2px 0 rgba(46,85,153,0.2);
 }
 
 /* ── Dark tokens ────────────────────────────────────────────────── */
 .dark {
-  --ds-bg:                #080e1c;
+  --ds-bg:                #0b1120;
   --ds-surface:           #111827;
-  --ds-surface-raised:    #0d1424;
-  --ds-border:            rgba(255,255,255,0.07);
-  --ds-border-subtle:     rgba(255,255,255,0.04);
+  --ds-surface-hover:     #172033;
+  --ds-border:            #1f2937;
+  --ds-border-subtle:     #1e293b;
+  --ds-ring:              rgba(123,163,224,0.15);
 
-  --ds-text-primary:      #f9fafb;
-  --ds-text-secondary:    #e2e8f0;
-  --ds-text-muted:        #64748b;
-  --ds-text-dim:          #374151;
+  --ds-text-primary:      #f8fafc;
+  --ds-text-secondary:    #cbd5e1;
+  --ds-text-muted:        #94a3b8;
+  --ds-text-dim:          #475569;
 
   --ds-indigo:            #7ba3e0;
-  --ds-indigo-hover:      #4d7cc4;
-  --ds-indigo-light:      rgba(46,85,153,0.15);
-  --ds-indigo-border:     rgba(46,85,153,0.35);
-  --ds-indigo-dot-shadow: rgba(123,163,224,0.55);
+  --ds-indigo-hover:      #93b6eb;
+  --ds-indigo-bg:         rgba(123,163,224,0.1);
+  --ds-indigo-border:     rgba(123,163,224,0.2);
 
   --ds-amber:             #fbbf24;
-  --ds-amber-bg:          rgba(245,158,11,0.12);
-  --ds-amber-border:      rgba(245,158,11,0.28);
+  --ds-amber-bg:          rgba(245,158,11,0.1);
+  --ds-amber-border:      rgba(245,158,11,0.2);
+  
   --ds-green:             #34d399;
-  --ds-green-bg:          rgba(16,185,129,0.12);
-  --ds-green-border:      rgba(16,185,129,0.25);
+  --ds-green-bg:          rgba(16,185,129,0.1);
+  --ds-green-border:      rgba(16,185,129,0.2);
+  
   --ds-red:               #f87171;
-  --ds-red-bg:            rgba(239,68,68,0.12);
+  --ds-red-bg:            rgba(239,68,68,0.1);
+  --ds-red-border:        rgba(239,68,68,0.2);
 
-  --ds-thead-bg:          rgba(255,255,255,0.02);
-  --ds-row-hover:         rgba(46,85,153,0.05);
-  --ds-progress-track:    rgba(255,255,255,0.05);
-  --ds-checkbox:          #374151;
-  --ds-avatar-border:     #0d1424;
-  --ds-avatar-extra-bg:   #1f2937;
-  --ds-avatar-extra-tx:   #6b7280;
-  --ds-input-bg:          #111827;
-  --ds-table-divider:     rgba(255,255,255,0.04);
-  --ds-footer-border:     rgba(255,255,255,0.05);
-  --ds-id-bg:             rgba(255,255,255,0.03);
-  --ds-id-border:         rgba(255,255,255,0.05);
-  --ds-id-color:          #374151;
-  --ds-links-border:      rgba(255,255,255,0.08);
+  --ds-sky:               #38bdf8;
+  --ds-sky-bg:            rgba(14,165,233,0.1);
+  --ds-sky-border:        rgba(14,165,233,0.2);
 
-  --ds-stat-bg:           linear-gradient(145deg,#111827 0%,#0f1728 100%);
-  --ds-card-shadow:       0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --ds-thead-bg:          #0f172a;
+  --ds-row-hover:         #172033;
+  --ds-progress-track:    #1e293b;
+  --ds-checkbox:          #334155;
+  --ds-avatar-border:     #111827;
+  --ds-avatar-extra-bg:   #1e293b;
+  --ds-avatar-extra-tx:   #94a3b8;
+  --ds-input-bg:          #0f172a;
+
+  --ds-card-shadow:       0 1px 3px 0 rgb(0 0 0 / 0.4);
+  --ds-hover-shadow:      0 4px 6px -1px rgb(0 0 0 / 0.4);
+  --ds-btn-shadow:        0 1px 2px 0 rgba(0,0,0,0.5);
 }
 
 /* ── Base ────────────────────────────────────────────────────────── */
-
-/* ── Scrollbar hide util ──────────────────────────────────────────── */
 .hide-sb::-webkit-scrollbar { display: none; }
 .hide-sb { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Fade-up animation util ─────────────────────────────────────── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* ── Specific Component Styles ───────────────────────────────────── */
+.ae-section { width: 100%; padding-bottom: 32px; font-family: var(--ds-font); }
+
+.ae-stat-grid { display: grid; grid-template-columns: repeat(1,1fr); gap: 16px; margin-bottom: 32px; }
+@media(min-width: 600px)  { .ae-stat-grid { grid-template-columns: repeat(2,1fr); } }
+@media(min-width: 1024px) { .ae-stat-grid { grid-template-columns: repeat(4,1fr); } }
+
+.ae-table-wrap { 
+  background: var(--ds-surface); 
+  border: 1px solid var(--ds-border); 
+  border-radius: 12px; 
+  overflow-x: auto; 
+  box-shadow: var(--ds-card-shadow); 
 }
-.fade-up { animation: fadeUp 0.25s ease-out both; }
+
+.ae-row { transition: all 0.2s ease; cursor: pointer; }
+.ae-row:hover { background: var(--ds-row-hover); }
+.ae-row:hover .ae-name { color: var(--ds-indigo) !important; }
+
+.ae-th { 
+  padding: 14px 24px; 
+  font-size: 12px; 
+  font-weight: 600; 
+  color: var(--ds-text-muted); 
+  text-align: left; 
+  white-space: nowrap; 
+}
+.ae-th-sort { cursor: pointer; transition: color 0.15s; }
+.ae-th-sort:hover { color: var(--ds-text-primary); }
+
+.ae-btn-new { 
+  display: flex; align-items: center; gap: 8px; 
+  background: var(--ds-indigo); color: #fff; 
+  border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; 
+  padding: 9px 18px; font-size: 14px; font-weight: 500; 
+  cursor: pointer; box-shadow: var(--ds-btn-shadow);
+  transition: all 0.2s ease; 
+}
+.ae-btn-new:hover { background: var(--ds-indigo-hover); transform: translateY(-1px); box-shadow: 0 4px 12px var(--ds-indigo-bg); }
+
+.ae-pill { 
+  border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s ease; white-space: nowrap; 
+  border: 1px solid transparent; background: transparent; color: var(--ds-text-muted); 
+}
+.ae-pill.active { background: var(--ds-indigo-bg); color: var(--ds-indigo); font-weight: 600; }
+.ae-pill:not(.active):hover { color: var(--ds-text-primary); background: var(--ds-surface-hover); }
+
+.ae-search-wrap { position: relative; width: min(320px, 100%); flex-shrink: 0; }
+.ae-search { 
+  width: 100%; background: var(--ds-input-bg); 
+  border: 1px solid var(--ds-border); border-radius: 8px; 
+  padding: 10px 14px 10px 38px; font-size: 13px; color: var(--ds-text-primary); 
+  outline: none; transition: all 0.2s; box-shadow: var(--ds-card-shadow);
+}
+.ae-search:focus { border-color: var(--ds-indigo); box-shadow: 0 0 0 3px var(--ds-ring); }
+.ae-search::placeholder { color: var(--ds-text-dim); }
+
+.ae-view-toggle { display: flex; background: var(--ds-input-bg); border: 1px solid var(--ds-border); border-radius: 8px; padding: 4px; box-shadow: var(--ds-card-shadow); }
+.ae-view-btn { background: transparent; border: none; border-radius: 6px; padding: 6px; color: var(--ds-text-muted); cursor: pointer; transition: all 0.15s; }
+.ae-view-btn.active { background: var(--ds-bg); color: var(--ds-text-primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+.ae-icon-btn { background: transparent; border: none; border-radius: 6px; padding: 6px; color: var(--ds-text-muted); cursor: pointer; transition: all 0.15s; }
+.ae-icon-btn:hover { background: var(--ds-border-subtle); color: var(--ds-text-primary); }
+
+.ae-badge {
+  display: inline-flex; align-items: center; gap: 6px; 
+  border-radius: 999px; padding: 4px 10px; 
+  font-size: 12px; font-weight: 500; white-space: nowrap;
+}
 `;
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const AUDITS = [
-  { id: "69CA672B", name: "test2", type: "Operational", status: "Draft", progress: 0, start: "Mar 30", end: "Apr 29", links: 0, team: [{ init: "LA", color: "#2E5599" }, { init: "JS", color: "#0ea5e9" }, { init: "MR", color: "#10b981" }], extraTeam: 3, risk: "Low" },
-  { id: "69CA66F3", name: "test1", type: "Operational", status: "Draft", progress: 0, start: "Mar 30", end: "Apr 29", links: 0, team: [{ init: "LA", color: "#2E5599" }, { init: "JS", color: "#0ea5e9" }, { init: "MR", color: "#10b981" }, { init: "TK", color: "#f59e0b" }], extraTeam: 4, risk: "Medium" },
-  { id: "69CA637D", name: "Procurement & Vendor Management Audit", type: "Operational", status: "Fieldwork", progress: 50, start: "Mar 30", end: "Jun 30", links: 1, team: [{ init: "LA", color: "#2E5599" }, { init: "JS", color: "#0ea5e9" }, { init: "MR", color: "#10b981" }], extraTeam: 3, risk: "High" },
-  { id: "69C7C8B4", name: "Employee Onboarding & Offboarding Process Audit — FY 2026", type: "Operational", status: "Fieldwork", progress: 50, start: "Mar 28", end: "Apr 30", links: 2, team: [{ init: "A", color: "#ec4899" }], extraTeam: 1, risk: "Medium" },
+  { id: "69CA672B", name: "Q1 Financial Controls Testing", type: "Operational", status: "Draft", progress: 0, start: "Mar 30", end: "Apr 29", links: 0, team: [{ init: "LA", color: "#2E5599" }, { init: "JS", color: "#0ea5e9" }, { init: "MR", color: "#10b981" }], extraTeam: 3, risk: "Low" },
+  { id: "69CA66F3", name: "IT Security & Access Management", type: "Operational", status: "Planning", progress: 15, start: "Mar 30", end: "Apr 29", links: 0, team: [{ init: "LA", color: "#2E5599" }, { init: "JS", color: "#0ea5e9" }, { init: "MR", color: "#10b981" }, { init: "TK", color: "#f59e0b" }], extraTeam: 4, risk: "Medium" },
+  { id: "69CA637D", name: "Procurement & Vendor Management Audit", type: "Operational", status: "Fieldwork", progress: 58, start: "Mar 30", end: "Jun 30", links: 1, team: [{ init: "LA", color: "#2E5599" }, { init: "JS", color: "#0ea5e9" }, { init: "MR", color: "#10b981" }], extraTeam: 3, risk: "High" },
+  { id: "69C7C8B4", name: "Employee Onboarding & Offboarding — FY26", type: "Compliance", status: "Fieldwork", progress: 42, start: "Mar 28", end: "Apr 30", links: 2, team: [{ init: "A", color: "#ec4899" }], extraTeam: 0, risk: "Medium" },
 ];
 
-const STATUS_CFG: Record<string, { bg: string; border: string; text: string }> = {
-  Draft: { bg: "var(--ds-amber-bg)", border: "var(--ds-amber-border)", text: "var(--ds-amber)" },
-  Fieldwork: { bg: "var(--ds-indigo-light)", border: "var(--ds-indigo-border)", text: "var(--ds-indigo)" },
-  Planning: { bg: "rgba(14,165,233,0.1)", border: "rgba(14,165,233,0.25)", text: "#0ea5e9" },
+const STATUS_CFG: Record<string, { bg: string; border: string; text: string; icon: React.ElementType }> = {
+  Draft: { bg: "var(--ds-bg)", border: "var(--ds-border)", text: "var(--ds-text-secondary)", icon: Clipboard },
+  Fieldwork: { bg: "var(--ds-sky-bg)", border: "var(--ds-sky-border)", text: "var(--ds-sky)", icon: PlayCircle },
+  Planning: { bg: "var(--ds-amber-bg)", border: "var(--ds-amber-border)", text: "var(--ds-amber)", icon: Clock },
 };
 
 const RISK_CFG: Record<string, { color: string; bg: string }> = {
@@ -146,43 +213,56 @@ const RISK_CFG: Record<string, { color: string; bg: string }> = {
 function ProgressBar({ value, animate }: { value: number; animate: boolean }) {
   const [w, setW] = useState(0);
   useEffect(() => { const t = setTimeout(() => setW(value), animate ? 260 : 0); return () => clearTimeout(t); }, [value, animate]);
-  const color = value === 0 ? "var(--ds-checkbox)" : value < 40 ? "var(--ds-amber)" : value < 80 ? "var(--ds-indigo)" : "var(--ds-green)";
+  const color = value === 0 ? "var(--ds-border)" : value < 40 ? "var(--ds-amber)" : value < 80 ? "var(--ds-sky)" : "var(--ds-green)";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 90 }}>
-      <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-mono)", color: value === 0 ? "var(--ds-text-muted)" : color }}>{value}%</span>
-      <div style={{ height: 4, background: "var(--ds-progress-track)", borderRadius: 99, overflow: "hidden", width: 90 }}>
-        <div style={{ height: "100%", width: `${w}%`, background: value === 0 ? "transparent" : `linear-gradient(90deg,${color}88,${color})`, borderRadius: 99, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", boxShadow: value > 0 ? `0 0 8px ${color}55` : "none" }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 120 }}>
+      <div style={{ height: 6, background: "var(--ds-progress-track)", borderRadius: 99, overflow: "hidden", flex: 1 }}>
+        <div style={{ height: "100%", width: `${w}%`, background: color, borderRadius: 99, transition: "width 1s cubic-bezier(0.16, 1, 0.3, 1)" }} />
       </div>
+      <span style={{ fontSize: 12, fontWeight: 500, fontFamily: "var(--ds-mono)", color: value === 0 ? "var(--ds-text-dim)" : "var(--ds-text-secondary)", width: 32 }}>{value}%</span>
     </div>
   );
 }
 
-function Avatar({ init, color }: { init: string; color: string }) {
+function Avatar({ init, color, index }: { init: string; color: string; index: number }) {
   return (
-    <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid var(--ds-avatar-border)", background: `${color}20`, color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, fontFamily: "var(--ds-font)" }}>
+    <div style={{ width: 30, height: 30, borderRadius: "50%", border: "2px solid var(--ds-avatar-border)", background: `${color}15`, color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, flexShrink: 0, zIndex: 10 - index, position: "relative", marginLeft: index > 0 ? -10 : 0 }}>
       {init}
     </div>
   );
 }
 
-function StatCard({ label, value, sub, subColor, icon, accent, delay = 0 }: { label: string; value: number; sub: string; subColor: string; icon: React.ReactNode; accent: string; delay?: number }) {
+function StatCard({ label, value, sub, subColor, icon, delay = 0 }: { label: string; value: number; sub: string; subColor: string; icon: React.ReactNode; delay?: number }) {
   const [vis, setVis] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); }, [delay]);
   return (
-    <div style={{ background: "var(--ds-stat-bg)", border: "1px solid var(--ds-border)", borderRadius: 16, padding: "20px 22px", position: "relative", overflow: "hidden", transition: "opacity 0.5s ease, transform 0.5s ease", opacity: vis ? 1 : 0, transform: vis ? "none" : "translateY(10px)", boxShadow: "var(--ds-card-shadow)" }}>
-      {/* top accent line */}
-      <div style={{ position: "absolute", inset: "0 0 auto 0", height: 2, background: `linear-gradient(90deg,transparent,${accent},transparent)`, opacity: 0.7 }} />
+    <div style={{
+      background: "var(--ds-surface)", border: "1px solid var(--ds-border)", borderRadius: 12, padding: "20px",
+      transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)", opacity: vis ? 1 : 0, transform: vis ? "none" : "translateY(10px)",
+      boxShadow: "var(--ds-card-shadow)", cursor: "default"
+    }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--ds-hover-shadow)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "var(--ds-card-shadow)"; }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "var(--ds-text-muted)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: 12 }}>{label}</p>
-          <p style={{ fontSize: 36, fontWeight: 800, color: "var(--ds-text-primary)", lineHeight: 1, letterSpacing: "-0.03em" }}>{value}</p>
-          {sub && <p style={{ fontSize: 12, color: subColor || "var(--ds-text-muted)", marginTop: 6 }}>{sub}</p>}
+          <p style={{ fontSize: 13, fontWeight: 500, color: "var(--ds-text-muted)", marginBottom: 8 }}>{label}</p>
+          <p style={{ fontSize: 32, fontWeight: 700, color: "var(--ds-text-primary)", lineHeight: 1, letterSpacing: "-0.02em" }}>{value}</p>
+          {sub && <p style={{ fontSize: 13, fontWeight: 500, color: subColor || "var(--ds-text-muted)", marginTop: 10 }}>{sub}</p>}
         </div>
-        <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: `${accent}15`, border: `1px solid ${accent}28`, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: "var(--ds-bg)", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 12 }}>
           {icon}
         </div>
       </div>
     </div>
+  );
+}
+
+function Badge({ children, bg, border, color }: { children: React.ReactNode, bg: string, border: string, color: string }) {
+  return (
+    <span className="ae-badge" style={{ background: bg, border: `1px solid ${border}`, color: color }}>
+      {children}
+    </span>
   );
 }
 
@@ -207,214 +287,182 @@ export default function AuditExecutionPage() {
     (filterStatus === "All Statuses" || a.status === filterStatus)
   );
 
-  const auditPageCss = `${DESIGN_SYSTEM_CSS}
-        .ae-section { width:100%; padding-bottom:24px; }
-
-        .ae-stat-grid { display:grid; grid-template-columns:repeat(1,1fr); gap:16px; margin-bottom:28px; }
-        @media(min-width:600px)  { .ae-stat-grid { grid-template-columns:repeat(2,1fr); } }
-        @media(min-width:1024px) { .ae-stat-grid { grid-template-columns:repeat(4,1fr); } }
-
-        .ae-header-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:36px; gap:16px; flex-wrap:wrap; }
-
-        .ae-filters-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; flex-wrap:wrap; }
-        .ae-filters-right { display:flex; gap:8px; align-items:center; overflow-x:auto; flex-shrink:0; max-width:100%; padding-bottom:2px; }
-        .ae-filters-right::-webkit-scrollbar { height:0; }
-
-        .ae-table-wrap { background:var(--ds-surface); border:1px solid var(--ds-border); border-radius:16px; overflow-x:auto; overflow-y:visible; -webkit-overflow-scrolling:touch; box-shadow:var(--ds-card-shadow); }
-
-        .ae-row { transition:background 0.12s ease; cursor:pointer; }
-        .ae-row:hover { background:var(--ds-row-hover); }
-        .ae-row:hover .ae-row-accent { opacity:1 !important; }
-        .ae-row:hover .ae-name { color:var(--ds-indigo) !important; }
-
-        .ae-th { padding:13px 16px; font-size:11px; font-weight:700; color:var(--ds-text-muted); text-transform:uppercase; letter-spacing:0.08em; text-align:left; white-space:nowrap; }
-        .ae-th-sort { cursor:pointer; }
-        .ae-th-sort:hover { color:var(--ds-text-secondary); }
-
-        .ae-btn-new { display:flex; align-items:center; gap:8px; background:var(--ds-indigo); color:#fff; border:none; border-radius:12px; padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer; font-family:var(--ds-font); white-space:nowrap; transition:background 0.15s, transform 0.15s, box-shadow 0.15s; }
-        .ae-btn-new:hover { background:var(--ds-indigo-hover); transform:translateY(-1px); box-shadow:0 8px 24px rgba(46,85,153,0.3); }
-
-        .ae-pill { border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer; font-family:var(--ds-font); transition:all 0.12s ease; white-space:nowrap; border:1px solid var(--ds-border); background:transparent; color:var(--ds-text-muted); }
-        .ae-pill.active { background:var(--ds-indigo-light); border-color:var(--ds-indigo-border); color:var(--ds-indigo); font-weight:600; }
-        .ae-pill:not(.active):hover { border-color:var(--ds-indigo-border); color:var(--ds-text-secondary); }
-
-        .ae-search { width:100%; background:var(--ds-input-bg); border:1px solid var(--ds-border); border-radius:10px; padding:9px 14px 9px 34px; font-size:13px; color:var(--ds-text-secondary); font-family:var(--ds-font); outline:none; transition:border-color 0.2s; }
-        .ae-search:focus { border-color:var(--ds-indigo-border); }
-        .ae-search::placeholder { color:var(--ds-text-muted); }
-
-        .ae-view-toggle { display:flex; background:var(--ds-surface); border:1px solid var(--ds-border); border-radius:10px; padding:3px; }
-        .ae-view-btn { background:transparent; border:none; border-radius:7px; padding:6px 8px; color:var(--ds-text-muted); cursor:pointer; transition:all 0.12s; display:flex; align-items:center; }
-        .ae-view-btn.active { background:var(--ds-indigo-light); color:var(--ds-indigo); }
-
-        .ae-icon-btn { background:transparent; border:none; border-radius:7px; padding:6px; color:var(--ds-text-dim); cursor:pointer; transition:all 0.12s; }
-        .ae-icon-btn:hover { background:var(--ds-row-hover); color:var(--ds-text-primary); }
-
-        .ae-links-badge { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--ds-links-border); border-radius:7px; padding:4px 9px; cursor:pointer; background:transparent; transition:all 0.12s; }
-        .ae-links-badge:hover { border-color:var(--ds-indigo-border); background:var(--ds-indigo-light); }
-
-        .ae-divider { width:1px; height:20px; background:var(--ds-border); flex-shrink:0; }
-      `;
-
   return (
     <>
-      <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: auditPageCss }} />
+      <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: DESIGN_SYSTEM_CSS }} />
 
       <section className="ae-section">
 
-          {/* Header */}
-          <div className="ae-header-row" style={{ opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(-8px)", transition: "opacity 0.4s ease, transform 0.4s ease" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ds-indigo)", boxShadow: "0 0 8px var(--ds-indigo-dot-shadow)" }} />
-                <span style={{ fontSize: 12, color: "var(--ds-indigo)", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Audit Management</span>
-              </div>
-              <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--ds-text-primary)", letterSpacing: "-0.03em", lineHeight: 1.2 }}>Audit Execution</h1>
-              <p style={{ fontSize: 13, color: "var(--ds-text-muted)", marginTop: 6 }}>Select methodology based on engagement type · {AUDITS.length} active audits</p>
-            </div>
-            <button className="ae-btn-new"><Plus size={16} />New Audit</button>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, flexWrap: "wrap", gap: 16, opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(-4px)", transition: "all 0.5s ease" }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--ds-text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>Audit Execution</h1>
+            <p style={{ fontSize: 14, color: "var(--ds-text-muted)", marginTop: 6 }}>Manage methodologies and fieldwork for {AUDITS.length} active engagements.</p>
           </div>
+          <button className="ae-btn-new"><Plus size={18} strokeWidth={2} /> New Audit</button>
+        </div>
 
-          {/* Stat cards */}
-          <div className="ae-stat-grid">
-            <StatCard label="Total Audits" value={4} sub="↑ 2 this quarter" subColor="var(--ds-green)" accent="#2E5599" delay={100} icon={<Clipboard size={17} color="#2E5599" />} />
-            <StatCard label="Planning" value={0} sub="Recent: N/A" subColor="#8b5cf6" accent="#8b5cf6" delay={180} icon={<Clock size={17} color="#8b5cf6" />} />
-            <StatCard label="In Fieldwork" value={2} sub="50% avg. progress" subColor="#0ea5e9" accent="#0ea5e9" delay={260} icon={<PlayCircle size={17} color="#0ea5e9" />} />
-            <StatCard label="Completed" value={0} sub="Efficiency: 98%" subColor="var(--ds-green)" accent="#10b981" delay={340} icon={<CheckCircle2 size={17} color="#10b981" />} />
+        {/* Stat cards */}
+        <div className="ae-stat-grid">
+          <StatCard label="Total Audits" value={4} sub="↑ 2 this quarter" subColor="var(--ds-green)" delay={100} icon={<Clipboard size={20} strokeWidth={1.5} color="var(--ds-text-secondary)" />} />
+          <StatCard label="In Planning" value={1} sub="Next stage due soon" subColor="var(--ds-amber)" delay={180} icon={<Clock size={20} strokeWidth={1.5} color="var(--ds-text-secondary)" />} />
+          <StatCard label="In Fieldwork" value={2} sub="50% avg. progress" subColor="var(--ds-sky)" delay={260} icon={<PlayCircle size={20} strokeWidth={1.5} color="var(--ds-text-secondary)" />} />
+          <StatCard label="Completed" value={0} sub="Efficiency: 98%" subColor="var(--ds-green)" delay={340} icon={<CheckCircle2 size={20} strokeWidth={1.5} color="var(--ds-text-secondary)" />} />
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 16, flexWrap: "wrap", opacity: loaded ? 1 : 0, transition: "opacity 0.5s ease 0.3s" }}>
+          <div className="ae-search-wrap">
+            <Search size={16} strokeWidth={1.5} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ds-text-dim)" }} />
+            <input className="ae-search" type="text" placeholder="Search by name or ID…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-
-          {/* Filters */}
-          <div className="ae-filters-bar" style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.5s ease 0.3s" }}>
-            <div style={{ position: "relative", width: "min(280px,100%)", flexShrink: 0 }}>
-              <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ds-text-muted)" }} />
-              <input className="ae-search" type="text" placeholder="Search by name or ID…" value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <div className="ae-filters-right hide-sb">
-              {["All Statuses", "Draft", "Fieldwork", "Planning"].map(s => (
+          <div style={{ display: "flex", gap: 12, alignItems: "center", overflowX: "auto", paddingBottom: 2 }}>
+            <div style={{ display: "flex", gap: 4 }}>
+              {["All Statuses", "Draft", "Planning", "Fieldwork"].map(s => (
                 <button key={s} className={`ae-pill${filterStatus === s ? " active" : ""}`} onClick={() => setFilterStatus(s)}>{s}</button>
               ))}
-              <div className="ae-divider" />
-              <div className="ae-view-toggle">
-                {([{ id: "list", Icon: List }, { id: "grid", Icon: LayoutGrid }] as const).map(({ id, Icon }) => (
-                  <button key={id} className={`ae-view-btn${activeView === id ? " active" : ""}`} onClick={() => setActiveView(id)}><Icon size={15} /></button>
-                ))}
-              </div>
+            </div>
+            <div style={{ width: 1, height: 24, background: "var(--ds-border)", flexShrink: 0 }} />
+            <div className="ae-view-toggle">
+              {([{ id: "list", Icon: List }, { id: "grid", Icon: LayoutGrid }] as const).map(({ id, Icon }) => (
+                <button key={id} className={`ae-view-btn${activeView === id ? " active" : ""}`} onClick={() => setActiveView(id)}><Icon size={16} strokeWidth={1.5} /></button>
+              ))}
             </div>
           </div>
+        </div>
 
-          {/* Table */}
-          <div className="ae-table-wrap" style={{ opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(16px)", transition: "opacity 0.5s ease 0.35s, transform 0.5s ease 0.35s" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960 }}>
-              <thead>
-                <tr style={{ background: "var(--ds-thead-bg)", borderBottom: "1px solid var(--ds-border)" }}>
-                  <th className="ae-th" style={{ width: 48, paddingLeft: 20 }}>
-                    <div style={{ width: 16, height: 16, borderRadius: 4, border: "1.5px solid var(--ds-checkbox)" }} />
+        {/* Table */}
+        <div className="ae-table-wrap" style={{ opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(12px)", transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960 }}>
+            <thead>
+              <tr style={{ background: "var(--ds-thead-bg)", borderBottom: "1px solid var(--ds-border)" }}>
+                <th className="ae-th" style={{ width: 48, paddingLeft: 24 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: 4, border: "1.5px solid var(--ds-checkbox)", background: "var(--ds-surface)" }} />
+                </th>
+                {["Audit Name", "Type", "Status", "Risk", "Progress", "Timeline", "Team", " "].map(h => (
+                  <th key={h} className={`ae-th${["Audit Name", "Status", "Timeline"].includes(h) ? " ae-th-sort" : ""}`}>
+                    {["Audit Name", "Status", "Timeline"].includes(h)
+                      ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}>{h} <ChevronDown size={14} strokeWidth={2} style={{ opacity: 0.5 }} /></span>
+                      : h}
                   </th>
-                  {["Audit", "Type", "Status", "Risk", "Progress", "Timeline", "Links", "Team"].map(h => (
-                    <th key={h} className={`ae-th${["Audit", "Status", "Timeline"].includes(h) ? " ae-th-sort" : ""}`}>
-                      {["Audit", "Status", "Timeline"].includes(h)
-                        ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}>{h} <ChevronDown size={11} style={{ opacity: 0.4 }} /></span>
-                        : h}
-                    </th>
-                  ))}
-                  <th className="ae-th" style={{ width: 48 }} />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((audit, idx) => {
-                  const sc = STATUS_CFG[audit.status] ?? STATUS_CFG.Draft;
-                  const rc = RISK_CFG[audit.risk] ?? RISK_CFG.Low;
-                  return (
-                    <tr
-                      key={audit.id}
-                      className="ae-row"
-                      onClick={e => handleRowClick(audit.id, e)}
-                      style={{ borderBottom: idx < filtered.length - 1 ? "1px solid var(--ds-table-divider)" : "none", opacity: loaded ? 1 : 0, transition: `opacity 0.4s ease ${0.4 + idx * 0.07}s` }}
-                    >
-                      {/* Checkbox + left accent */}
-                      <td style={{ padding: "16px 16px 16px 20px", position: "relative" }}>
-                        <div className="ae-row-accent" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 2, background: sc.text, borderRadius: "0 2px 2px 0", opacity: 0, transition: "opacity 0.15s ease" }} />
-                        <div style={{ width: 16, height: 16, borderRadius: 4, border: "1.5px solid var(--ds-checkbox)" }} />
-                      </td>
-                      {/* Name + ID */}
-                      <td style={{ padding: "16px", maxWidth: 300 }}>
-                        <div className="ae-name" style={{ fontWeight: 600, color: "var(--ds-text-secondary)", fontSize: 14, marginBottom: 5, lineHeight: 1.3, transition: "color 0.12s" }}>{audit.name}</div>
-                        <span style={{ fontFamily: "var(--ds-mono)", fontSize: 11, color: "var(--ds-id-color)", background: "var(--ds-id-bg)", border: "1px solid var(--ds-id-border)", borderRadius: 5, padding: "2px 6px", letterSpacing: "0.04em" }}>#{audit.id}</span>
-                      </td>
-                      {/* Type */}
-                      <td style={{ padding: "16px" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "var(--ds-green-bg)", border: "1px solid var(--ds-green-border)", color: "var(--ds-green)", borderRadius: 7, padding: "4px 10px", fontSize: 12, fontWeight: 500 }}>
-                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--ds-green)" }} />
-                          {audit.type}
-                        </span>
-                      </td>
-                      {/* Status */}
-                      <td style={{ padding: "16px" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: sc.bg, border: `1px solid ${sc.border}`, color: sc.text, borderRadius: 7, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
-                          {audit.status === "Draft" ? <Clipboard size={11} /> : <PlayCircle size={11} />}
-                          {audit.status}
-                        </span>
-                      </td>
-                      {/* Risk */}
-                      <td style={{ padding: "16px" }}>
-                        <span style={{ background: rc.bg, color: rc.color, borderRadius: 6, padding: "3px 9px", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>{audit.risk}</span>
-                      </td>
-                      {/* Progress */}
-                      <td style={{ padding: "16px" }}><ProgressBar value={audit.progress} animate={loaded} /></td>
-                      {/* Timeline */}
-                      <td style={{ padding: "16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <Calendar size={13} style={{ color: "var(--ds-text-muted)", flexShrink: 0 }} />
-                          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                            <span style={{ fontSize: 12, color: "var(--ds-text-secondary)", fontWeight: 500 }}>{audit.start}</span>
-                            <span style={{ fontSize: 11, color: "var(--ds-text-muted)" }}>→ {audit.end}</span>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((audit, idx) => {
+                const sc = STATUS_CFG[audit.status] ?? STATUS_CFG.Draft;
+                const rc = RISK_CFG[audit.risk] ?? RISK_CFG.Low;
+                const StatusIcon = sc.icon;
+
+                return (
+                  <tr
+                    key={audit.id}
+                    className="ae-row"
+                    onClick={e => handleRowClick(audit.id, e)}
+                    style={{ borderBottom: idx < filtered.length - 1 ? "1px solid var(--ds-border-subtle)" : "none" }}
+                  >
+                    {/* Checkbox */}
+                    <td style={{ padding: "16px 16px 16px 24px" }}>
+                      <div style={{ width: 16, height: 16, borderRadius: 4, border: "1.5px solid var(--ds-checkbox)", background: "var(--ds-surface)" }} />
+                    </td>
+
+                    {/* Name + ID */}
+                    <td style={{ padding: "16px 24px" }}>
+                      <div className="ae-name" style={{ fontWeight: 500, color: "var(--ds-text-primary)", fontSize: 14, marginBottom: 6, lineHeight: 1.3, transition: "color 0.15s" }}>{audit.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontFamily: "var(--ds-mono)", fontSize: 12, color: "var(--ds-text-muted)" }}>{audit.id}</span>
+                        {audit.links > 0 && (
+                          <span className="no-nav" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--ds-text-muted)", background: "var(--ds-bg)", padding: "2px 6px", borderRadius: 4, border: "1px solid var(--ds-border-subtle)" }}>
+                            <Link2 size={12} strokeWidth={2} /> {audit.links}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Type */}
+                    <td style={{ padding: "16px 24px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ds-text-secondary)" }}>
+                        <ShieldAlert size={14} strokeWidth={1.5} color="var(--ds-text-muted)" />
+                        {audit.type}
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: "16px 24px" }}>
+                      <Badge bg={sc.bg} border={sc.border} color={sc.text}>
+                        <StatusIcon size={12} strokeWidth={2.5} />
+                        {audit.status}
+                      </Badge>
+                    </td>
+
+                    {/* Risk */}
+                    <td style={{ padding: "16px 24px" }}>
+                      <Badge bg={rc.bg} border="transparent" color={rc.color}>
+                        {audit.risk}
+                      </Badge>
+                    </td>
+
+                    {/* Progress */}
+                    <td style={{ padding: "16px 24px" }}><ProgressBar value={audit.progress} animate={loaded} /></td>
+
+                    {/* Timeline */}
+                    <td style={{ padding: "16px 24px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Calendar size={14} strokeWidth={1.5} style={{ color: "var(--ds-text-dim)", flexShrink: 0 }} />
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          <span style={{ fontSize: 13, color: "var(--ds-text-primary)", fontWeight: 500 }}>{audit.start}</span>
+                          <span style={{ fontSize: 12, color: "var(--ds-text-muted)" }}>End: {audit.end}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Team */}
+                    <td style={{ padding: "16px 24px" }}>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        {audit.team.slice(0, 3).map((m, i) => (
+                          <Avatar key={i} init={m.init} color={m.color} index={i} />
+                        ))}
+                        {audit.extraTeam > 0 && (
+                          <div style={{
+                            marginLeft: -10, width: 30, height: 30, borderRadius: "50%", zIndex: 0, position: "relative",
+                            background: "var(--ds-avatar-extra-bg)", border: "2px solid var(--ds-avatar-border)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 11, fontWeight: 600, color: "var(--ds-avatar-extra-tx)"
+                          }}>
+                            +{audit.extraTeam}
                           </div>
-                        </div>
-                      </td>
-                      {/* Links */}
-                      <td style={{ padding: "16px" }}>
-                        <div className="ae-links-badge no-nav">
-                          <Link2 size={12} style={{ color: "var(--ds-text-muted)" }} />
-                          <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-mono)", color: audit.links > 0 ? "var(--ds-indigo)" : "var(--ds-text-muted)" }}>{audit.links}</span>
-                        </div>
-                      </td>
-                      {/* Team */}
-                      <td style={{ padding: "16px" }}>
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                          <div style={{ display: "flex" }}>
-                            {audit.team.slice(0, 3).map((m, i) => (
-                              <div key={i} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i, position: "relative" }}>
-                                <Avatar init={m.init} color={m.color} />
-                              </div>
-                            ))}
-                          </div>
-                          {audit.extraTeam > 1 && (
-                            <div style={{ marginLeft: -6, width: 28, height: 28, borderRadius: "50%", background: "var(--ds-avatar-extra-bg)", border: "2px solid var(--ds-avatar-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "var(--ds-avatar-extra-tx)" }}>+{audit.extraTeam}</div>
-                          )}
-                        </div>
-                      </td>
-                      {/* Actions */}
-                      <td style={{ padding: "16px", textAlign: "right" }}>
-                        <button className="ae-icon-btn no-nav" onClick={e => e.stopPropagation()} title="More options"><MoreHorizontal size={16} /></button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={10} style={{ padding: "60px 24px", textAlign: "center" }}>
-                      <p style={{ color: "var(--ds-text-muted)", fontSize: 14, marginBottom: 12 }}>No audits match your current filters.</p>
-                      <button onClick={() => { setSearch(""); setFilterStatus("All Statuses"); }} style={{ background: "transparent", border: "1px solid var(--ds-indigo-border)", borderRadius: 8, padding: "7px 16px", color: "var(--ds-indigo)", fontSize: 13, cursor: "pointer", fontFamily: "var(--ds-font)" }}>Clear filters</button>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Actions */}
+                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                      <button className="ae-icon-btn no-nav" onClick={e => e.stopPropagation()} title="More options"><MoreHorizontal size={18} strokeWidth={1.5} /></button>
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-            {/* Footer */}
-            <div style={{ borderTop: "1px solid var(--ds-footer-border)", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "var(--ds-text-muted)", fontFamily: "var(--ds-mono)" }}>{filtered.length} of {AUDITS.length} audits</span>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--ds-indigo-light)", border: "1px solid var(--ds-indigo-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--ds-indigo)" }}>1</div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={10} style={{ padding: "64px 24px", textAlign: "center" }}>
+                    <p style={{ color: "var(--ds-text-muted)", fontSize: 14, marginBottom: 16 }}>No audits match your current filters.</p>
+                    <button onClick={() => { setSearch(""); setFilterStatus("All Statuses"); }} style={{ background: "var(--ds-surface)", border: "1px solid var(--ds-border)", borderRadius: 8, padding: "8px 16px", color: "var(--ds-text-primary)", fontSize: 13, fontWeight: 500, cursor: "pointer", boxShadow: "var(--ds-card-shadow)", transition: "all 0.2s" }}>Clear filters</button>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Footer */}
+          <div style={{ borderTop: "1px solid var(--ds-border)", padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--ds-thead-bg)" }}>
+            <span style={{ fontSize: 13, color: "var(--ds-text-muted)" }}>Showing <strong style={{ color: "var(--ds-text-primary)", fontWeight: 500 }}>{filtered.length}</strong> of {AUDITS.length} engagements</span>
+            <div style={{ display: "flex", gap: 4 }}>
+              <button className="ae-view-btn" disabled style={{ opacity: 0.5 }}>Prev</button>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--ds-surface)", border: "1px solid var(--ds-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 500, color: "var(--ds-text-primary)", boxShadow: "var(--ds-card-shadow)" }}>1</div>
+              <button className="ae-view-btn" disabled style={{ opacity: 0.5 }}>Next</button>
             </div>
           </div>
+        </div>
 
       </section>
     </>

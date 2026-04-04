@@ -33,7 +33,8 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className={`${geistSans.className} flex h-screen overflow-hidden antialiased bg-white dark:bg-[#0B1324] text-slate-900 dark:text-slate-50`}>
+      {/* 1. Added `flex-col` here so the layout stacks vertically top-to-bottom */}
+      <body className={`${geistSans.className} flex flex-col h-screen overflow-hidden antialiased bg-white dark:bg-[#0B1324] text-slate-900 dark:text-slate-50`}>
 
         <ThemeProvider
           attribute="class"
@@ -41,23 +42,19 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* TooltipProvider now wraps the ENTIRE layout. 
-            This ensures the Sidebar tooltips and TopNav components work correctly.
-          */}
           <TooltipProvider delayDuration={150}>
 
-            {/* 1. Sidebar acts as a fixed flex item on the left */}
-            <Sidebar />
+            {/* 2. TopNav is now the first child of the body column, spanning 100% width */}
+            <TopNav />
 
-            {/* 2. Main wrapper takes remaining width and establishes a vertical flex column */}
-            <div className="flex flex-col flex-1 w-full overflow-hidden bg-slate-50/50 dark:bg-[#050A14]">
+            {/* 3. This flex wrapper sits below TopNav and holds the Sidebar + Main Content side-by-side */}
+            <div className="flex flex-1 min-h-0 w-full overflow-hidden">
 
-              {/* TopNav sits at the top of the column */}
-              <TopNav />
+              <Sidebar />
 
-              {/* 3. Main content area scrolls independently */}
-              <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar">
-                {/* Constrains ultra-wide screens to keep data readable */}
+              {/* 4. Main content area takes the remaining width and handles its own vertical scrolling. 
+                  (Moved your background colors to this main tag so they don't bleed under the sidebar) */}
+              <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar bg-slate-50/50 dark:bg-[#050A14]">
                 <div className="mx-auto max-w-7xl w-full">
                   {children}
                 </div>

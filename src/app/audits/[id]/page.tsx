@@ -1,633 +1,529 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
-    ArrowLeft, Clock, Download, Edit, Trash2, ArrowRight, CheckCircle2,
-    XCircle, Target, Shield, AlertTriangle, TrendingUp, LayoutGrid,
-    FileText, CheckSquare, Lock, Users, BarChart3, LucideIcon,
-    ChevronRight, Calendar, Timer, Wallet,
+    ArrowLeft, Clock, Download, Trash2, CheckCircle2, FlaskConical,
+    Target, Shield, AlertTriangle, FileText, CheckSquare, Zap, Search,
+    Lock, CalendarDays, CalendarRange, Filter, ChevronDown, Circle,
+    ArrowRight, Users, LayoutGrid, LucideIcon, MoreHorizontal, Settings2, SlidersHorizontal
 } from "lucide-react";
 
-// ─── Import shared design system ─────────────────────────────────────────────
-const DESIGN_SYSTEM_CSS = `
+// ─── Local Page Design System ────────────────────────────────────────────────
+const PAGE_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
 :root {
-  --ds-font:              'DM Sans', sans-serif;
-  --ds-mono:              'DM Mono', monospace;
-  --ds-bg:                #f4f6fa;
-  --ds-surface:           #ffffff;
-  --ds-surface-raised:    #f9fafb;
-  --ds-border:            rgba(0,0,0,0.08);
-  --ds-border-subtle:     rgba(0,0,0,0.05);
-  --ds-text-primary:      #0f172a;
-  --ds-text-secondary:    #1e293b;
-  --ds-text-muted:        #64748b;
-  --ds-text-dim:          #94a3b8;
-  --ds-indigo:            #2E5599;
-  --ds-indigo-hover:      #244580;
-  --ds-indigo-light:      rgba(46,85,153,0.08);
-  --ds-indigo-border:     rgba(46,85,153,0.28);
-  --ds-indigo-dot-shadow: rgba(46,85,153,0.45);
-  --ds-amber:             #d97706;
-  --ds-amber-bg:          rgba(245,158,11,0.08);
-  --ds-amber-border:      rgba(245,158,11,0.25);
-  --ds-green:             #059669;
-  --ds-green-bg:          rgba(16,185,129,0.08);
-  --ds-green-border:      rgba(16,185,129,0.2);
-  --ds-red:               #dc2626;
-  --ds-red-bg:            rgba(239,68,68,0.08);
-  --ds-progress-track:    rgba(0,0,0,0.07);
-  --ds-checkbox:          #cbd5e1;
-  --ds-avatar-border:     #ffffff;
-  --ds-stat-bg:           linear-gradient(145deg,#ffffff 0%,#f8faff 100%);
-  --ds-card-shadow:       0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --ds-id-bg:             rgba(0,0,0,0.04);
-  --ds-id-border:         rgba(0,0,0,0.07);
-  --ds-id-color:          #94a3b8;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
+
+  /* Premium Light Theme */
+  --bg-page: #f8fafc; 
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+  --bg-surface-active: #e2e8f0;
+  
+  --border-light: #f8fafc;
+  --border-base: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  /* Brand Accent: Vibrant Indigo */
+  --accent-brand: #4f46e5;
+  --accent-brand-hover: #4338ca;
+  --accent-brand-bg: #e0e7ff;
+  --accent-brand-text: #3730a3;
+
+  /* Semantic Colors */
+  --success-bg: #ecfdf5;
+  --success-text: #059669;
+  --success-border: #a7f3d0;
+  
+  --danger-bg: #fef2f2;
+  --danger-text: #dc2626;
+  --danger-border: #fecaca;
+  
+  --warning-bg: #fffbeb;
+  --warning-text: #d97706;
+  --warning-border: #fde68a;
+
+  --info-bg: #f0f9ff;
+  --info-text: #0284c7;
+  --info-border: #bae6fd;
+
+  /* Shadows & Radii */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 9999px;
 }
 
-.dark {
-  --ds-bg:                #080e1c;
-  --ds-surface:           #111827;
-  --ds-surface-raised:    #0d1424;
-  --ds-border:            rgba(255,255,255,0.07);
-  --ds-border-subtle:     rgba(255,255,255,0.04);
-  --ds-text-primary:      #f9fafb;
-  --ds-text-secondary:    #e2e8f0;
-  --ds-text-muted:        #64748b;
-  --ds-text-dim:          #374151;
-  --ds-indigo:            #7ba3e0;
-  --ds-indigo-hover:      #4d7cc4;
-  --ds-indigo-light:      rgba(46,85,153,0.15);
-  --ds-indigo-border:     rgba(46,85,153,0.35);
-  --ds-indigo-dot-shadow: rgba(123,163,224,0.55);
-  --ds-amber:             #fbbf24;
-  --ds-amber-bg:          rgba(245,158,11,0.12);
-  --ds-amber-border:      rgba(245,158,11,0.28);
-  --ds-green:             #34d399;
-  --ds-green-bg:          rgba(16,185,129,0.12);
-  --ds-green-border:      rgba(16,185,129,0.25);
-  --ds-red:               #f87171;
-  --ds-red-bg:            rgba(239,68,68,0.12);
-  --ds-progress-track:    rgba(255,255,255,0.05);
-  --ds-checkbox:          #374151;
-  --ds-avatar-border:     #0d1424;
-  --ds-stat-bg:           linear-gradient(145deg,#111827 0%,#0f1728 100%);
-  --ds-card-shadow:       0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
-  --ds-id-bg:             rgba(255,255,255,0.03);
-  --ds-id-border:         rgba(255,255,255,0.05);
-  --ds-id-color:          #374151;
+body { background-color: var(--bg-page); margin: 0; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+
+.inner-page-container { display: flex; flex-direction: column; min-height: 100vh; font-family: var(--font-sans); }
+
+/* Compact Header */
+.top-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-base);
+  padding: 24px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  position: relative;
 }
 
-.hide-sb::-webkit-scrollbar { display:none; }
-.hide-sb { -ms-overflow-style:none; scrollbar-width:none; }
-@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-.fade-up { animation:fadeUp 0.25s ease-out both; }
+/* Horizontal Navigation */
+.horizontal-nav-bar {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-base);
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+.horizontal-nav-bar::-webkit-scrollbar { display: none; }
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.nav-group::after {
+  content: '';
+  position: absolute;
+  right: -16px;
+  height: 20px;
+  width: 1px;
+  background: var(--border-base);
+}
+.nav-group:last-child::after { display: none; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: none;
+  border-top: none; border-left: none; border-right: none;
+}
+.nav-item:hover:not(:disabled) { color: var(--text-primary); }
+.nav-item.active {
+  color: var(--accent-brand);
+  font-weight: 600;
+  border-bottom-color: var(--accent-brand);
+}
+.nav-item:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Main Workspace */
+.workspace-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 40px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Data Table Grid Setup */
+.data-table-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.data-grid-row {
+  display: grid;
+  /* Perfect alignment columns: Checkbox | ID | Control Name | Nature | Type | Status | Result | Actions */
+  grid-template-columns: 40px 100px minmax(250px, 1fr) 110px 110px 120px 160px 48px;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-base);
+  gap: 16px;
+  transition: background 0.15s;
+}
+.data-grid-row:hover:not(.grid-header) { background: var(--bg-surface-hover); }
+.data-grid-row:last-child { border-bottom: none; }
+
+.grid-header {
+  background: var(--bg-surface-hover);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 16px 20px;
+}
+
+.grid-group-header {
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-base);
+  padding: 12px 20px;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.search-input { 
+  width: 100%; 
+  padding: 10px 14px 10px 36px; 
+  border: 1px solid var(--border-base); 
+  border-radius: var(--radius-sm); 
+  font-size: 14px; 
+  outline: none; 
+  transition: all 0.2s;
+}
+.search-input:focus { border-color: var(--accent-brand); box-shadow: 0 0 0 3px var(--accent-brand-bg); }
 `;
 
-// ─── cn helper ────────────────────────────────────────────────────────────────
-function cn(...c: (string | false | undefined | null)[]) { return c.filter(Boolean).join(" "); }
+// ─── TypeScript Interfaces ───────────────────────────────────────────────────
+interface Step { id: number; label: string; status: "completed" | "active" | "upcoming"; subtitle?: string; }
+interface NavItemType { id: string; label: string; icon: LucideIcon; locked?: boolean; }
+interface NavGroup { heading: string; items: NavItemType[]; }
+type BtnVariant = "default" | "primary" | "danger" | "ghost";
+interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> { icon?: LucideIcon; label?: string; variant?: BtnVariant; }
+interface ControlItem { id: string; name: string; nature: "Preventive" | "Detective"; type: "Manual" | "Automated"; status: "Completed" | "In Progress" | "Not Started"; result: "No Exception" | "Exception Noted" | "Pending"; }
+interface ControlGroup { frequency: string; icon: LucideIcon; controls: ControlItem[]; }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface TeamMember { role: string; initials: string; dotColor: string; bgColor: string; textColor: string; }
+// ─── Data ────────────────────────────────────────────────────────────────────
+const AUDIT = { id: "GDPR-2026", title: "General Data Protection Regulation", type: "Compliance Audit", tag: "Framework-mapped" };
 
-const AUDIT = {
-    id: "AUD-2026-004",
-    title: "Quarterly IT Security Assessment",
-    type: "Operational",
-    engagementType: "Operational Audit Engagement",
-    status: "Draft",
-    scopeText: "Flexible scope · 10–15 controls",
-    approvalStatus: "Draft",
-    auditSource: "AdHoc",
-    inherentRisk: "—",
-    entity: "Accenture",
-    entityCode: "ACC-001",
-    department: "—",
-    owner: "Lead Auditor",
-    startDate: "Mar 30, 2026",
-    endDate: "Apr 29, 2026",
-    estHours: "0h",
-    budgetHours: "0h",
-    actualHours: "0h",
-    budgetSource: "Manual",
-    objective: "To evaluate the effectiveness of the current IT security controls and identify potential vulnerabilities within the core infrastructure.",
-    scope: "Review of access management protocols, firewall configurations, and incident response procedures across the North American data centers.",
-    createdOn: "Mar 30, 2026",
-    updatedOn: "Mar 30, 2026",
-    createdBy: "Admin",
-    lead: { name: "Sarah Jenkins", email: "s.jenkins@cpa-firm.com", initials: "SJ" },
-    members: [
-        { role: "Auditor", initials: "AU", dotColor: "#2E5599", bgColor: "rgba(46,85,153,0.12)", textColor: "#2E5599" },
-        { role: "Process Owner", initials: "PO", dotColor: "#0ea5e9", bgColor: "rgba(14,165,233,0.12)", textColor: "#0ea5e9" },
-        { role: "Control Owner", initials: "CO", dotColor: "#10b981", bgColor: "rgba(16,185,129,0.12)", textColor: "#10b981" },
-    ] as TeamMember[],
-};
-
-// ─── Stepper ──────────────────────────────────────────────────────────────────
-const STEPS = [
-    { id: 1, label: "Planning", tag: "Draft", active: true },
-    { id: 2, label: "Fieldwork", active: false },
-    { id: 3, label: "Reporting", active: false },
-    { id: 4, label: "Closed", active: false },
+const HORIZONTAL_NAV: NavGroup[] = [
+    { heading: "ENGAGEMENT", items: [{ id: "overview", label: "Overview", icon: LayoutGrid }, { id: "planning", label: "Planning", icon: Target }, { id: "risk", label: "Risks", icon: Shield }] },
+    { heading: "EXECUTION", items: [{ id: "walkthroughs", label: "Walkthroughs", icon: CheckSquare }, { id: "testing", label: "Control Testing", icon: FlaskConical }, { id: "time", label: "Time", icon: Clock }] },
+    { heading: "REPORTING", items: [{ id: "issues", label: "Issues", icon: AlertTriangle, locked: true }, { id: "report", label: "Report", icon: FileText, locked: true }, { id: "closure", label: "Closure", icon: Lock, locked: true }] },
 ];
 
-function Stepper() {
+const TESTING_DATA: ControlGroup[] = [
+    {
+        frequency: "Transaction Controls", icon: Zap,
+        controls: [
+            { id: "CM-01", name: "Change Authorization & CAB Approval", nature: "Preventive", type: "Manual", status: "Completed", result: "Exception Noted" },
+            { id: "IT-02", name: "Emergency Change Management Process", nature: "Preventive", type: "Manual", status: "Completed", result: "No Exception" },
+        ]
+    },
+    {
+        frequency: "Monthly Controls", icon: CalendarRange,
+        controls: [
+            { id: "C1-VEN", name: "Vendor Onboarding & Approval Review", nature: "Preventive", type: "Manual", status: "Completed", result: "No Exception" },
+            { id: "OPS-01", name: "Backup Monitoring & Restoration Tests", nature: "Detective", type: "Automated", status: "In Progress", result: "Pending" },
+            { id: "OPS-03", name: "Incident & Problem Management Logs", nature: "Preventive", type: "Manual", status: "Completed", result: "Exception Noted" },
+        ]
+    },
+    {
+        frequency: "Quarterly Controls", icon: CalendarDays,
+        controls: [
+            { id: "AM-03", name: "Periodic Access Recertification (UAR)", nature: "Detective", type: "Manual", status: "Not Started", result: "Pending" },
+        ]
+    }
+];
+
+const STEPS: Step[] = [
+    { id: 1, label: "Planning", status: "completed" },
+    { id: 2, label: "Fieldwork", status: "active" },
+    { id: 3, label: "Reporting", status: "upcoming" },
+    { id: 4, label: "Closed", status: "upcoming" },
+] as const;
+
+// ─── Micro-Components ────────────────────────────────────────────────────────
+function Badge({ variant, children }: { variant: string, children: React.ReactNode }) {
+    const isBrand = variant === "brand";
     return (
-        <div className="hide-sb" style={{ display: "flex", alignItems: "center", overflowX: "auto", paddingBottom: 4 }}>
-            {STEPS.map((step, i) => (
-                <React.Fragment key={step.id}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flexShrink: 0, minWidth: 100 }}>
-                        <div style={{
-                            width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 13, fontWeight: 700, border: "2px solid",
-                            borderColor: step.active ? "var(--ds-indigo)" : "var(--ds-border)",
-                            background: step.active ? "var(--ds-indigo)" : "var(--ds-surface-raised)",
-                            color: step.active ? "#fff" : "var(--ds-text-muted)",
-                            boxShadow: step.active ? "0 0 0 4px var(--ds-indigo-light)" : "none",
-                            transition: "all 0.2s ease",
-                        }}>
-                            {!step.active ? <Lock size={13} strokeWidth={2.5} /> : step.id}
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: step.active ? "var(--ds-text-primary)" : "var(--ds-text-muted)" }}>{step.label}</span>
-                            {step.tag && (
-                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: "var(--ds-amber-bg)", color: "var(--ds-amber)", border: "1px solid var(--ds-amber-border)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{step.tag}</span>
-                            )}
-                        </div>
-                    </div>
-                    {i < STEPS.length - 1 && (
-                        <div style={{ flex: 1, height: 1, background: "var(--ds-border)", minWidth: 16, marginBottom: 28, marginLeft: 2, marginRight: 2 }} />
-                    )}
-                </React.Fragment>
-            ))}
-        </div>
+        <span style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            padding: "4px 10px", borderRadius: "var(--radius-pill)",
+            fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap",
+            background: isBrand ? "var(--accent-brand-bg)" : `var(--${variant}-bg)`,
+            color: isBrand ? "var(--accent-brand-text)" : `var(--${variant}-text)`,
+            border: `1px solid ${isBrand ? "rgba(79, 70, 229, 0.2)" : `var(--${variant}-border)`}`
+        }}>
+            {children}
+        </span>
     );
 }
 
-// ─── Button ───────────────────────────────────────────────────────────────────
-type BtnVariant = "default" | "primary" | "danger" | "ghost";
-
-function Btn({ icon: Icon, label, variant = "default", style: extraStyle, ...rest }: {
-    icon?: LucideIcon; label?: string; variant?: BtnVariant;
-    style?: React.CSSProperties;
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+function Btn({ icon: Icon, label, variant = "default", style, ...rest }: BtnProps) {
     const base: React.CSSProperties = {
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        gap: 6, borderRadius: 10, fontSize: 13, fontWeight: 600,
-        cursor: "pointer", border: "1px solid", transition: "all 0.15s ease",
-        fontFamily: "var(--ds-font)", whiteSpace: "nowrap",
-        padding: label ? "8px 14px" : "8px",
+        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px",
+        borderRadius: "var(--radius-sm)", fontSize: "13px", fontWeight: 600,
+        cursor: "pointer", transition: "all 0.15s", padding: label ? "8px 14px" : "8px",
+        outline: "none", border: "none"
     };
-    const variants: Record<BtnVariant, React.CSSProperties> = {
-        default: { background: "var(--ds-surface)", borderColor: "var(--ds-border)", color: "var(--ds-text-secondary)", boxShadow: "var(--ds-card-shadow)" },
-        primary: { background: "var(--ds-indigo)", borderColor: "var(--ds-indigo-hover)", color: "#fff", boxShadow: "0 2px 8px var(--ds-indigo-light)" },
-        danger: { background: "var(--ds-surface)", borderColor: "var(--ds-border)", color: "var(--ds-red)", boxShadow: "var(--ds-card-shadow)" },
-        ghost: { background: "transparent", borderColor: "transparent", color: "var(--ds-text-muted)" },
+
+    const variants: Record<string, React.CSSProperties> = {
+        default: { background: "var(--bg-surface)", border: "1px solid var(--border-base)", color: "var(--text-primary)", boxShadow: "var(--shadow-xs)" },
+        primary: { background: "var(--accent-brand)", color: "#fff", boxShadow: "var(--shadow-sm)" },
+        ghost: { background: "transparent", color: "var(--text-secondary)", padding: label ? "8px 12px" : "8px" },
     };
+
     return (
-        <button style={{ ...base, ...variants[variant], ...extraStyle }} {...rest}>
-            {Icon && <Icon size={14} strokeWidth={2} />}
+        <button
+            style={{ ...base, ...(variants[variant] || variants.default), ...style }}
+            onMouseEnter={(e) => {
+                if (variant === 'primary') e.currentTarget.style.background = 'var(--accent-brand-hover)';
+                else if (variant === 'default') e.currentTarget.style.background = 'var(--bg-surface-hover)';
+                else if (variant === 'ghost') { e.currentTarget.style.background = 'var(--bg-surface-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }
+            }}
+            onMouseLeave={(e) => {
+                if (variant === 'primary') e.currentTarget.style.background = 'var(--accent-brand)';
+                else if (variant === 'default') e.currentTarget.style.background = 'var(--bg-surface)';
+                else if (variant === 'ghost') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }
+            }}
+            {...rest}
+        >
+            {Icon && <Icon size={16} strokeWidth={2.5} />}
             {label && <span>{label}</span>}
         </button>
     );
 }
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+// ─── Main Component ──────────────────────────────────────────────────────────
+export default function AuditWorkspace() {
     return (
-        <div style={{ background: "var(--ds-surface)", border: "1px solid var(--ds-border)", borderRadius: 16, boxShadow: "var(--ds-card-shadow)", overflow: "hidden", ...style }}>
-            {children}
-        </div>
+        <Suspense fallback={<div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Loading workspace...</div>}>
+            <AuditExecutionUI />
+        </Suspense>
     );
 }
 
-function CardHead({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-    return (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", borderBottom: "1px solid var(--ds-border-subtle)", ...style }}>
-            {children}
-        </div>
-    );
-}
+function AuditExecutionUI() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon: Icon, accent }: { label: string; value: string; icon: LucideIcon; accent: string }) {
-    return (
-        <div style={{ background: "var(--ds-stat-bg)", border: "1px solid var(--ds-border)", borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden", boxShadow: "var(--ds-card-shadow)", display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ position: "absolute", inset: "0 0 auto 0", height: 2, background: `linear-gradient(90deg,transparent,${accent},transparent)`, opacity: 0.7 }} />
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em" }}>{label}</p>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${accent}15`, border: `1px solid ${accent}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icon size={14} strokeWidth={2.5} color={accent} />
-                </div>
-            </div>
-            <p style={{ fontSize: 30, fontWeight: 800, color: "var(--ds-text-primary)", lineHeight: 1, letterSpacing: "-0.03em" }}>{value}</p>
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${accent},transparent)` }} />
-        </div>
-    );
-}
-
-// ─── Nav item ─────────────────────────────────────────────────────────────────
-function NavItem({ label, icon: Icon, active, locked }: { label: string; icon: LucideIcon; active?: boolean; locked?: boolean }) {
-    return (
-        <button disabled={locked} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            width: "100%", padding: "7px 12px", borderRadius: 9, border: "none",
-            background: active ? "var(--ds-indigo-light)" : "transparent",
-            color: active ? "var(--ds-indigo)" : locked ? "var(--ds-text-dim)" : "var(--ds-text-muted)",
-            cursor: locked ? "not-allowed" : "pointer",
-            fontSize: 13, fontWeight: active ? 600 : 500,
-            fontFamily: "var(--ds-font)", transition: "all 0.12s ease",
-            outline: "none",
-        }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                <Icon size={14} strokeWidth={2} color={active ? "var(--ds-indigo)" : locked ? "var(--ds-text-dim)" : "var(--ds-text-muted)"} />
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-            </span>
-            {locked && <Lock size={11} color="var(--ds-text-dim)" />}
-        </button>
-    );
-}
-
-// ─── Detail item ─────────────────────────────────────────────────────────────
-function DetailItem({ label, value }: { label: string; value?: React.ReactNode }) {
-    const empty = !value || value === "—" || value === "0" || value === "0h";
-    return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-            <dt style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em" }}>{label}</dt>
-            <dd style={{ fontSize: 13, fontWeight: 600, color: empty ? "var(--ds-text-dim)" : "var(--ds-text-secondary)", fontStyle: empty ? "italic" : "normal", wordBreak: "break-word" }}>
-                {empty ? "Not set" : value}
-            </dd>
-        </div>
-    );
-}
-
-// ─── Gate row ─────────────────────────────────────────────────────────────────
-function GateRow({ done, title, desc }: { done: boolean; title: string; desc: string }) {
-    return (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-            {done
-                ? <CheckCircle2 size={17} color="var(--ds-green)" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 1 }} />
-                : <XCircle size={17} color="var(--ds-border)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 1 }} />
-            }
-            <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: done ? "var(--ds-text-secondary)" : "var(--ds-text-muted)", marginBottom: 2 }}>{title}</p>
-                <p style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.5 }}>{desc}</p>
-            </div>
-        </div>
-    );
-}
-
-// ─── Progress row ─────────────────────────────────────────────────────────────
-function ProgressRow({ label, percent }: { label: string; percent: number }) {
-    const color = percent === 100 ? "var(--ds-indigo)" : "var(--ds-border)";
-    return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text-secondary)" }}>{label}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-mono)", color: "var(--ds-text-muted)" }}>{percent}%</span>
-            </div>
-            <div style={{ height: 4, background: "var(--ds-progress-track)", borderRadius: 99, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${percent}%`, background: percent === 100 ? `linear-gradient(90deg,var(--ds-indigo)88,var(--ds-indigo))` : color, borderRadius: 99, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", boxShadow: percent > 0 ? "0 0 8px var(--ds-indigo-light)" : "none" }} />
-            </div>
-        </div>
-    );
-}
-
-// ─── Nav groups ───────────────────────────────────────────────────────────────
-const NAV = [
-    { heading: "Engagement", items: [{ label: "Overview", icon: LayoutGrid, active: true }, { label: "Planning", icon: Target }, { label: "Risk Assessment", icon: Shield }] },
-    { heading: "Execution", items: [{ label: "Walkthroughs", icon: CheckSquare, locked: true }, { label: "Testing", icon: FileText, locked: true }, { label: "Time Tracking", icon: Clock }] },
-    { heading: "Reporting", items: [{ label: "Issues", icon: AlertTriangle, locked: true }, { label: "Report", icon: FileText, locked: true }, { label: "Closure", icon: Lock, locked: true }] },
-];
-
-type Tab = "general" | "scope" | "timeline";
-const TAB_LABELS: Record<Tab, string> = { general: "General Details", scope: "Scope & Objectives", timeline: "Timeline & Budget" };
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", padding: "0 12px", marginBottom: 6 }}>{children}</p>;
-}
-
-// ─── Main Page Component ──────────────────────────────────────────────────────
-export default function AuditDetailsPage() {
-    const [mounted, setMounted] = useState(false);
-    const [tab, setTab] = useState<Tab>("general");
+    const activeView = searchParams?.get("tab") || "testing";
+    const [mounted, setMounted] = useState<boolean>(false);
 
     useEffect(() => { setMounted(true); }, []);
     if (!mounted) return null;
 
-    // Fixed container: no overflow-x hidden, no isolation issues, solid background, lower z-index
-    const auditDetailCss = `${DESIGN_SYSTEM_CSS}
-        .ad-shell, .ad-main, .ad-two-col {
-          overflow-x: visible;
-        }
-        .ad-shell { width: 100%; padding-bottom: 24px; }
-
-        .ad-kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(2,1fr);
-          gap: 12px;
-        }
-        @media(min-width:1024px) {
-          .ad-kpi-grid { grid-template-columns: repeat(4,1fr); }
-        }
-
-        .ad-two-col {
-          display: flex;
-          gap: 20px;
-          align-items: flex-start;
-        }
-        .ad-sidebar {
-          display: none;
-        }
-        @media(min-width:1024px) {
-          .ad-sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 200px;
-            flex-shrink: 0;
-            position: sticky;
-            top: 92px;
-          }
-        }
-        .ad-main {
-          flex: 1;
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .ad-bottom-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 16px;
-        }
-        @media(min-width:640px) {
-          .ad-bottom-grid { grid-template-columns: 1fr 1fr; }
-        }
-
-        .ad-detail-grid {
-          display: grid;
-          grid-template-columns: repeat(1,1fr);
-          gap: 20px 28px;
-        }
-        @media(min-width:480px)  { .ad-detail-grid { grid-template-columns: repeat(2,1fr); } }
-        @media(min-width:1024px) { .ad-detail-grid { grid-template-columns: repeat(3,1fr); } }
-
-        .ad-scope-meta-grid {
-          display: grid;
-          grid-template-columns: repeat(2,1fr);
-          gap: 16px;
-        }
-        @media(min-width:640px)  { .ad-scope-meta-grid { grid-template-columns: repeat(4,1fr); } }
-
-        .ad-scope-text-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 20px;
-        }
-        @media(min-width:640px)  { .ad-scope-text-grid { grid-template-columns: 1fr 1fr; } }
-      `;
+    const handleNavClick = (tabId: string) => {
+        const params = new URLSearchParams(searchParams?.toString() || "");
+        params.set("tab", tabId);
+        router.push(`${pathname}?${params.toString()}`);
+    };
 
     return (
         <>
-            <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: auditDetailCss }} />
+            <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+            <div className="inner-page-container">
 
-            <section className="ad-shell">
-                {/* Header card now lives inside shared app shell */}
-                <Card style={{ marginBottom: 16 }}>
-                    <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--ds-border-subtle)" }}>
-                        <button
-                            onClick={() => window.history.back()}
-                            style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "var(--ds-text-muted)", fontSize: 12, fontWeight: 600, fontFamily: "var(--ds-font)", padding: 0 }}
-                        >
-                            <ArrowLeft size={13} strokeWidth={2.5} />
-                            Back to Audits
+                {/* 1. Master Header */}
+                <header className="top-header">
+                    <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+                        <button onClick={() => window.history.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", padding: "8px", borderRadius: "50%" }}>
+                            <ArrowLeft size={20} />
                         </button>
-                    </div>
-                    <div style={{ padding: "16px 20px", display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                                <span style={{ fontFamily: "var(--ds-mono)", fontSize: 11, color: "var(--ds-id-color)", background: "var(--ds-id-bg)", border: "1px solid var(--ds-id-border)", borderRadius: 6, padding: "2px 8px", letterSpacing: "0.04em" }}>
-                                    {AUDIT.id}
-                                </span>
-                                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--ds-text-muted)", fontWeight: 500 }}>
-                                    <Target size={12} strokeWidth={2} color="var(--ds-text-dim)" />
-                                    {AUDIT.engagementType}
-                                </span>
+                        <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent-brand)" }}>{AUDIT.id}</span>
+                                <Badge variant="warning">FIELDWORK</Badge>
                             </div>
-                            <h1 style={{ fontSize: "clamp(1.125rem,2.5vw,1.5rem)", fontWeight: 800, color: "var(--ds-text-primary)", letterSpacing: "-0.03em", lineHeight: 1.2, wordBreak: "break-word" }}>
+                            <h1 style={{ fontSize: "24px", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.01em" }}>
                                 {AUDIT.title}
                             </h1>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                            <Btn icon={Clock} variant="ghost" aria-label="History" />
-                            <Btn icon={Download} label="Export" />
-                            <Btn icon={Edit} label="Edit" variant="primary" />
-                        </div>
                     </div>
-                </Card>
 
-                    {/* Status + Stepper */}
-                    <Card style={{ marginBottom: 16 }}>
-                        <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--ds-border-subtle)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
-                                <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: "var(--ds-text-muted)" }}>
-                                    <Target size={13} strokeWidth={2} color="var(--ds-text-dim)" />
-                                    {AUDIT.type}
-                                    <span style={{ color: "var(--ds-border)" }}>·</span>
-                                    <span style={{ fontSize: 12, fontWeight: 400 }}>{AUDIT.scopeText}</span>
-                                </span>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "var(--ds-amber-bg)", color: "var(--ds-amber)", border: "1px solid var(--ds-amber-border)" }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ds-amber)", display: "inline-block" }} />
-                                    {AUDIT.status}
-                                </span>
-                            </div>
-                            <div style={{ display: "flex", gap: 8 }}>
-                                <Btn icon={ArrowRight} label="Advance Phase" variant="primary" />
-                                <Btn icon={Trash2} label="Delete" variant="danger" />
-                            </div>
-                        </div>
-                        <div style={{ padding: "18px 20px" }}>
-                            <Stepper />
-                        </div>
-                    </Card>
-
-                    {/* Two-col layout */}
-                    <div className="ad-two-col">
-
-                        {/* Sidebar */}
-                        <aside className="ad-sidebar">
-                            {NAV.map(group => (
-                                <div key={group.heading}>
-                                    <SectionLabel>{group.heading}</SectionLabel>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                        {group.items.map(item => (
-                                            <NavItem key={item.label} label={item.label} icon={item.icon as LucideIcon} active={(item as { active?: boolean }).active} locked={(item as { locked?: boolean }).locked} />
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </aside>
-
-                        {/* Main */}
-                        <main className="ad-main">
-
-                            {/* KPI grid */}
-                            <div className="ad-kpi-grid">
-                                <StatCard label="Risks in Scope" value="0" icon={Shield} accent="#2E5599" />
-                                <StatCard label="Checklist" value="0%" icon={CheckSquare} accent="#0ea5e9" />
-                                <StatCard label="Issues Found" value="0" icon={AlertTriangle} accent="#d97706" />
-                                <StatCard label="Progress" value="0%" icon={TrendingUp} accent="#10b981" />
-                            </div>
-
-                            {/* Gate requirements */}
-                            <Card>
-                                <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--ds-border-subtle)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--ds-indigo-light)", border: "1px solid var(--ds-indigo-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <ChevronRight size={14} color="var(--ds-indigo)" strokeWidth={2.5} />
-                                        </div>
-                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-primary)" }}>Gate Requirements: Planning → Fieldwork</span>
-                                    </div>
-                                    <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: "var(--ds-amber-bg)", color: "var(--ds-amber)", border: "1px solid var(--ds-amber-border)" }}>
-                                        1 of 3 complete
-                                    </span>
-                                </div>
-                                <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-                                    <GateRow done title="Audit scope defined" desc="Objective and scope have been clearly documented." />
-                                    <div style={{ height: 1, background: "var(--ds-border-subtle)" }} />
-                                    <GateRow done={false} title="Risk assigned" desc="At least one risk must be assigned to the audit framework." />
-                                    <div style={{ height: 1, background: "var(--ds-border-subtle)" }} />
-                                    <GateRow done={false} title="Control mapped to risk" desc="Assigned risks must have at least one mitigating control mapped." />
-                                </div>
-                            </Card>
-
-                            {/* Detail tabs */}
-                            <Card>
-                                {/* Tab bar */}
-                                <div className="hide-sb" style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid var(--ds-border)", overflowX: "auto", padding: "0 20px" }}>
-                                    {(["general", "scope", "timeline"] as Tab[]).map(t => (
-                                        <button key={t} onClick={() => setTab(t)} style={{
-                                            padding: "14px 16px 12px", fontSize: 13, fontWeight: 600, border: "none",
-                                            borderBottom: `2px solid ${tab === t ? "var(--ds-indigo)" : "transparent"}`,
-                                            background: "none", cursor: "pointer", whiteSpace: "nowrap",
-                                            color: tab === t ? "var(--ds-indigo)" : "var(--ds-text-muted)",
-                                            fontFamily: "var(--ds-font)", transition: "color 0.12s, border-color 0.12s",
-                                            marginBottom: -1,
+                    {/* Compact Stepper */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "var(--bg-page)", padding: "4px", borderRadius: "var(--radius-pill)", border: "1px solid var(--border-base)" }}>
+                            {STEPS.map((step, i) => {
+                                const isCompleted = step.status === "completed";
+                                const isActive = step.status === "active";
+                                return (
+                                    <React.Fragment key={step.id}>
+                                        <div style={{
+                                            display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "var(--radius-pill)",
+                                            background: isActive ? "var(--bg-surface)" : "transparent",
+                                            boxShadow: isActive ? "var(--shadow-xs)" : "none",
+                                            border: isActive ? "1px solid var(--border-base)" : "1px solid transparent"
                                         }}>
-                                            {TAB_LABELS[t]}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* Tab content */}
-                                <div className="fade-up" key={tab} style={{ padding: "20px 20px 22px" }}>
-                                    {tab === "general" && (
-                                        <dl className="ad-detail-grid">
-                                            <DetailItem label="Audit Number" value={AUDIT.id} />
-                                            <DetailItem label="Audit Type" value={AUDIT.type} />
-                                            <DetailItem label="Execution Type" value="Operational" />
-                                            <DetailItem label="Approval Status" value={AUDIT.approvalStatus} />
-                                            <DetailItem label="Audit Source" value={AUDIT.auditSource} />
-                                            <DetailItem label="Inherent Risk Rating" value={AUDIT.inherentRisk} />
-                                            <DetailItem label="Auditable Entity" value={AUDIT.entity} />
-                                            <DetailItem label="Entity Code" value={AUDIT.entityCode} />
-                                            <DetailItem label="Department" value={AUDIT.department} />
-                                        </dl>
-                                    )}
-                                    {tab === "scope" && (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                                            <dl className="ad-scope-meta-grid" style={{ paddingBottom: 16, borderBottom: "1px solid var(--ds-border-subtle)" }}>
-                                                <DetailItem label="Risk Score" value="0" />
-                                                <DetailItem label="Total Findings" value="0" />
-                                                <DetailItem label="Non-Conformities" value="0" />
-                                                <DetailItem label="Observations" value="0" />
-                                            </dl>
-                                            <div className="ad-scope-text-grid">
-                                                <div style={{ minWidth: 0 }}>
-                                                    <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Objective</p>
-                                                    <p style={{ fontSize: 13, color: "var(--ds-text-secondary)", lineHeight: 1.7, wordBreak: "break-word" }}>{AUDIT.objective}</p>
-                                                </div>
-                                                <div style={{ minWidth: 0 }}>
-                                                    <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Scope</p>
-                                                    <p style={{ fontSize: 13, color: "var(--ds-text-secondary)", lineHeight: 1.7, wordBreak: "break-word" }}>{AUDIT.scope}</p>
-                                                </div>
-                                            </div>
+                                            {isCompleted ? <CheckCircle2 size={16} color="var(--success-text)" /> : isActive ? <Circle size={10} fill="var(--accent-brand)" color="var(--accent-brand)" /> : <Lock size={14} color="var(--text-dim)" />}
+                                            <span style={{ fontSize: "13px", fontWeight: isActive ? 700 : 500, color: isActive ? "var(--text-primary)" : "var(--text-muted)" }}>
+                                                {step.label}
+                                            </span>
                                         </div>
-                                    )}
-                                    {tab === "timeline" && (
-                                        <dl className="ad-detail-grid">
-                                            <DetailItem label="Planned Start Date" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Calendar size={12} color="var(--ds-text-dim)" />{AUDIT.startDate}</span>} />
-                                            <DetailItem label="Planned End Date" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Calendar size={12} color="var(--ds-text-dim)" />{AUDIT.endDate}</span>} />
-                                            <DetailItem label="Owner" value={AUDIT.owner} />
-                                            <DetailItem label="Estimated Hours" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Timer size={12} color="var(--ds-text-dim)" />{AUDIT.estHours}</span>} />
-                                            <DetailItem label="Budget Hours" value={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Wallet size={12} color="var(--ds-text-dim)" />{AUDIT.budgetHours}</span>} />
-                                            <DetailItem label="Actual Hours" value={AUDIT.actualHours} />
-                                            <DetailItem label="Budget Source" value={AUDIT.budgetSource} />
-                                        </dl>
-                                    )}
-                                </div>
-
-                                {/* Footer */}
-                                <div style={{ padding: "10px 20px", borderTop: "1px solid var(--ds-border-subtle)", background: "var(--ds-surface-raised)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, fontSize: 12, fontWeight: 500, color: "var(--ds-text-muted)" }}>
-                                    <span>Created by <strong style={{ color: "var(--ds-text-secondary)", fontWeight: 700 }}>{AUDIT.createdBy}</strong> · {AUDIT.createdOn}</span>
-                                    <span style={{ fontFamily: "var(--ds-mono)", fontSize: 11 }}>Updated {AUDIT.updatedOn}</span>
-                                </div>
-                            </Card>
-
-                            {/* Team + Progress */}
-                            <div className="ad-bottom-grid">
-
-                                {/* Team card */}
-                                <Card>
-                                    <CardHead>
-                                        <Users size={14} strokeWidth={2} color="var(--ds-text-muted)" />
-                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-secondary)" }}>Audit Team</span>
-                                    </CardHead>
-                                    <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "var(--ds-surface-raised)", border: "1px solid var(--ds-border-subtle)" }}>
-                                            <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#2E5599,#4a7acc)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                                                {AUDIT.lead.initials}
-                                            </div>
-                                            <div style={{ minWidth: 0 }}>
-                                                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-primary)", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{AUDIT.lead.name}</p>
-                                                <p style={{ fontSize: 11, color: "var(--ds-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Lead Auditor · {AUDIT.lead.email}</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p style={{ fontSize: 10, fontWeight: 700, color: "var(--ds-text-muted)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 8 }}>Members</p>
-                                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                                                {AUDIT.members.map((m, i) => (
-                                                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 8, border: "1px solid var(--ds-border)", background: "var(--ds-surface)" }}>
-                                                        <div style={{ width: 22, height: 22, borderRadius: "50%", background: m.bgColor, color: m.textColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, flexShrink: 0 }}>{m.initials}</div>
-                                                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text-secondary)" }}>{m.role}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Card>
-
-                                {/* Progress card */}
-                                <Card>
-                                    <CardHead>
-                                        <BarChart3 size={14} strokeWidth={2} color="var(--ds-text-muted)" />
-                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ds-text-secondary)" }}>Phase Progress</span>
-                                    </CardHead>
-                                    <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
-                                        <ProgressRow label="Planning" percent={100} />
-                                        <ProgressRow label="Fieldwork" percent={0} />
-                                        <ProgressRow label="Reporting" percent={0} />
-                                        <ProgressRow label="Closure" percent={0} />
-                                    </div>
-                                </Card>
-
-                            </div>
-                        </main>
+                                        {i < STEPS.length - 1 && <div style={{ width: "16px", height: "1px", background: "var(--border-strong)" }} />}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </div>
+                        <Btn label="Advance" icon={ArrowRight} variant="primary" style={{ borderRadius: "var(--radius-pill)" }} />
                     </div>
-            </section>
+                </header>
+
+                {/* 2. Horizontal Navigation */}
+                <nav className="horizontal-nav-bar">
+                    {HORIZONTAL_NAV.map((group, gIdx) => (
+                        <div key={gIdx} className="nav-group">
+                            {/* Optional Group Label: <span style={{fontSize: "11px", fontWeight: 700, color: "var(--text-dim)", marginRight: "8px"}}>{group.heading}</span> */}
+                            {group.items.map((item) => (
+                                <button
+                                    key={item.id}
+                                    disabled={item.locked}
+                                    onClick={() => handleNavClick(item.id)}
+                                    className={`nav-item ${activeView === item.id ? 'active' : ''}`}
+                                >
+                                    <item.icon size={16} strokeWidth={activeView === item.id ? 2.5 : 2} />
+                                    {item.label}
+                                    {item.locked && <Lock size={12} />}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </nav>
+
+                {/* 3. Main Workspace Area */}
+                <main className="workspace-container animate-fade-in">
+                    {activeView === "testing" ? (
+                        <>
+                            {/* Toolbar */}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+                                <div style={{ display: "flex", gap: "12px", alignItems: "center", flex: 1 }}>
+                                    <div style={{ position: "relative", width: "320px" }}>
+                                        <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+                                        <input type="text" className="search-input" placeholder="Search controls by ID or name..." />
+                                    </div>
+                                    <Btn icon={SlidersHorizontal} label="Filters" variant="default" />
+                                    <Btn icon={Users} label="Owners" variant="default" />
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                    <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", marginRight: "8px" }}>
+                                        Overall Progress: <span style={{ color: "var(--success-text)", fontWeight: 800 }}>66%</span> (4/6)
+                                    </div>
+                                    <Btn icon={Download} label="Export" variant="ghost" />
+                                    <Btn icon={Settings2} variant="ghost" />
+                                </div>
+                            </div>
+
+                            {/* Data Grid Table */}
+                            <div className="data-table-container">
+                                {/* Table Header */}
+                                <div className="data-grid-row grid-header">
+                                    <input type="checkbox" style={{ width: "16px", height: "16px", accentColor: "var(--accent-brand)" }} />
+                                    <span>Control ID</span>
+                                    <span>Description</span>
+                                    <span>Nature</span>
+                                    <span>Type</span>
+                                    <span>Status</span>
+                                    <span>Testing Result</span>
+                                    <span style={{ textAlign: "center" }}>...</span>
+                                </div>
+
+                                {/* Table Body / Grouped Rows */}
+                                {TESTING_DATA.map((group, gIdx) => (
+                                    <React.Fragment key={gIdx}>
+                                        <div className="grid-group-header">
+                                            <group.icon size={16} color="var(--text-muted)" />
+                                            {group.frequency}
+                                            <span style={{ fontSize: "12px", color: "var(--text-dim)", fontWeight: 500, marginLeft: "8px" }}>
+                                                ({group.controls.length})
+                                            </span>
+                                        </div>
+
+                                        {group.controls.map((control, cIdx) => (
+                                            <div key={cIdx} className="data-grid-row">
+                                                {/* Checkbox */}
+                                                <input type="checkbox" style={{ width: "16px", height: "16px", accentColor: "var(--accent-brand)" }} />
+
+                                                {/* ID */}
+                                                <span style={{ fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+                                                    {control.id}
+                                                </span>
+
+                                                {/* Name */}
+                                                <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                    {control.name}
+                                                </span>
+
+                                                {/* Nature */}
+                                                <div><Badge variant="info">{control.nature}</Badge></div>
+
+                                                {/* Type */}
+                                                <div><Badge variant="brand">{control.type}</Badge></div>
+
+                                                {/* Status */}
+                                                <div>
+                                                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600, color: control.status === "Completed" ? "var(--success-text)" : control.status === "In Progress" ? "var(--warning-text)" : "var(--text-muted)" }}>
+                                                        {control.status === "Completed" ? <CheckCircle2 size={14} /> : control.status === "In Progress" ? <Clock size={14} /> : <Circle size={14} />}
+                                                        {control.status}
+                                                    </span>
+                                                </div>
+
+                                                {/* Result */}
+                                                <div>
+                                                    {control.result === "Pending" ? (
+                                                        <span style={{ fontSize: "13px", color: "var(--text-dim)", fontWeight: 500 }}>-</span>
+                                                    ) : (
+                                                        <Badge variant={control.result === "Exception Noted" ? "danger" : "success"}>{control.result}</Badge>
+                                                    )}
+                                                </div>
+
+                                                {/* Actions */}
+                                                <div style={{ display: "flex", justifyContent: "center" }}>
+                                                    <button style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "4px", borderRadius: "4px" }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-muted)"; }}
+                                                    >
+                                                        <MoreHorizontal size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ padding: "100px 40px", textAlign: "center", background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", border: "1px dashed var(--border-strong)", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+                            <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "var(--bg-page)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <LayoutGrid size={28} color="var(--text-muted)" />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px 0", textTransform: "capitalize" }}>
+                                    {activeView.replace("-", " ")}
+                                </h3>
+                                <p style={{ color: "var(--text-secondary)", fontSize: "14px", margin: 0 }}>
+                                    This module is currently pending integration. Navigate back to Control Testing to resume fieldwork.
+                                </p>
+                            </div>
+                            <Btn label="Return to Testing" variant="primary" onClick={() => handleNavClick("testing")} style={{ marginTop: "16px" }} />
+                        </div>
+                    )}
+                </main>
+            </div>
         </>
     );
 }
